@@ -1,0 +1,71 @@
+// Small custom rules on top of Bootstrap utilities.
+
+// Description limited to 2 lines, ending with an ellipsis.
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.book-cover {
+  width: 80px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  background-color: $light;
+
+  @include media-breakpoint-up(md) {
+    width: 100px;
+  }
+
+  &--large {
+    width: 100%;
+    max-width: 280px;
+  }
+}
+
+.book-card {
+  transition: border-color 0.15s ease-in-out;
+
+  &:hover,
+  &:focus-within {
+    border-color: $primary;
+  }
+}
+
+.book-title-link {
+  color: inherit;
+  text-decoration: none;
+
+  // The whole card is clickable through the title link.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  &:hover {
+    color: $link-color;
+  }
+}
+
+.skeleton-cover {
+  width: 80px;
+  aspect-ratio: 2 / 3;
+}
+
+.results-fade {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+// Bootstrap has no min-w-0 utility; lets flex children shrink so long titles wrap.
+.min-w-0 {
+  min-width: 0;
+}
+
+// The native clear button would duplicate our own one (WebKit/Blink).
+input[type='search']::-webkit-search-cancel-button {
+  display: none;
+}

@@ -1,0 +1,33 @@
+// Theme overrides. Must be imported BEFORE bootstrap's own variables (they are all !default).
+$brand: #ff5039;
+
+$primary: $brand;
+$secondary: #4b5563;
+$success: #1f9d63;
+$info: #2b7bb9;
+$warning: #f2a516;
+$danger: #c0261b;
+$light: #f6f4f2;
+$dark: #1f2430;
+
+$body-bg: #fbfaf9;
+$body-color: #1f2430;
+$link-color: #c7321d; // darker than the brand color to reach AA contrast on white
+$link-hover-color: #9f2414;
+$font-family-sans-serif:
+  system-ui,
+  -apple-system,
+  'Segoe UI',
+  Roboto,
+  'Helvetica Neue',
+  Arial,
+  sans-serif;
+$border-radius: 0.5rem;
+$focus-ring-width: 0.25rem;
+$focus-ring-opacity: 0.35;
+$enable-shadows: false;
+
+// White on the brand orange is only ~3.3:1, so the active page uses a darker shade (>= 4.5:1).
+$pagination-active-bg: #c7321d;
+$pagination-active-border-color: #c7321d;
+$pagination-active-color: #fff;
