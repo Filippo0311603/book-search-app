@@ -11,9 +11,17 @@ export default defineConfig(({ mode }) => {
   // `/@vite/env` module creates a global `process.env` from `define` at runtime.
   const env = loadEnv(mode, process.cwd(), 'VITE_');
 
+  // BASE_PATH (e.g. `/book-search-app/` on GitHub Pages) sets Vite's `base` and, through `define`,
+  // the router basename (`process.env.BASE_PATH`, never `import.meta`). Unset means `/`, which is
+  // also what CodeSandbox's bundler sees (no define there, so the app falls back to `/`).
+  const trimmed = (process.env.BASE_PATH ?? '').trim().replace(/^\/+|\/+$/g, '');
+  const base = trimmed ? `/${trimmed}/` : '/';
+
   return {
+    base,
     plugins: [react()],
     define: {
+      'process.env.BASE_PATH': JSON.stringify(base),
       'process.env.VITE_GOOGLE_BOOKS_API_KEY': JSON.stringify(env.VITE_GOOGLE_BOOKS_API_KEY ?? ''),
     },
     server: { host: true, port: 5173 },

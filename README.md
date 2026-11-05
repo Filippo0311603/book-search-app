@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/Filippo0311603/book-search-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Filippo0311603/book-search-app/actions/workflows/ci.yml)
 
+**Live demo:** <https://filippo0311603.github.io/book-search-app/> (GitHub Pages). The primary hosting required by the brief is CodeSandbox, see [CodeSandbox](#codesandbox).
+
 A responsive single-page app to search books with the [Google Books API](https://developers.google.com/books/docs/v1/reference/volumes/list): live search, paginated results and a detail page.
 
 Built with **Vite, React 19, TypeScript (strict), Redux Toolkit + RTK Query, React Router 7 and Bootstrap 5 (Sass, custom theme)**.
@@ -49,6 +51,20 @@ The SCSS in `src/styles/` is the source of truth. `src/styles/main.css` is **gen
 - The icon font's relative URLs do not resolve there, hence the **inline SVG icons**.
 
 `.codesandbox/tasks.json` is not used by the browser sandbox. It is kept for anyone who converts the sandbox to a Devbox (installs dependencies, runs `npm run dev` on port 5173; `vite.config.ts` sets `server.host: true` so the preview is reachable).
+
+Console messages from CodeSandbox's own runtime files (`compile.ts`, `cache.js`, `metrics.js`, "unload is not allowed", a CORS error on `/api/v1/sandboxes/.../cache`) come from CodeSandbox, not from the app.
+
+## Deployment
+
+`.github/workflows/deploy.yml` publishes the app to GitHub Pages on every push to `main` (and on manual `workflow_dispatch`). The `build` job runs `npm ci`, lint and tests, builds with the base path, and uploads `dist`; the `deploy` job only runs if it succeeds.
+
+- **Secret:** `VITE_GOOGLE_BOOKS_API_KEY` (repository secret, passed to `npm run build`). Without it the app still works with the small anonymous quota. Pages settings: Source = GitHub Actions.
+- **Base path:** the workflow builds with `BASE_PATH=/book-search-app/`. `vite.config.ts` uses it for Vite's `base` and exposes it as `process.env.BASE_PATH` (via `define`, no `import.meta`) for the router `basename`. When unset (local dev, default build, CodeSandbox) it is `/`.
+- **Deep links:** GitHub Pages has no rewrite rules, so the workflow copies `dist/index.html` to `dist/404.html`. Any unknown path (e.g. `/book-search-app/books/<id>` or a reload) is served the app, and React Router resolves the URL; real unknown paths show the app's own not-found page. GitHub Pages serves deep links through `404.html` with HTTP status 404. Users see the app normally; only crawlers and link checkers see the 404.
+- **Local check** of the production build with the base path:
+  - Git Bash: `MSYS_NO_PATHCONV=1 BASE_PATH=/book-search-app/ npm run build`. Git Bash otherwise rewrites the `/book-search-app/` value into a Windows path, so `MSYS_NO_PATHCONV=1` is needed.
+  - PowerShell: `$env:BASE_PATH='/book-search-app/'; npm run build`.
+  - Then `npm run preview` to serve the build.
 
 ## Requirements mapping
 
