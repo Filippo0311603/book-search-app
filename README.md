@@ -37,7 +37,7 @@ Import the GitHub repository from <https://codesandbox.io/dashboard/import> (or 
 
 | Requirement                                           | Where                                                                                                                                                                     |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Live search (updates while typing)                    | `SearchPage` + `useDebouncedValue` + `useBookSearch`                                                                                                                      |
+| Live search (updates while typing)                    | `SearchPage` (one search per input change) + `useBookSearch`                                                                                                              |
 | Pagination with `startIndex` / `maxResults`           | `services/googleBooksApi.ts`, `features/books/pagination.ts`                                                                                                              |
 | Page count computed from `totalItems`                 | `getEffectiveTotal` / `getTotalPages`                                                                                                                                     |
 | Page size in [5, 10, 15, 20]                          | `PAGE_SIZES` constant, `PageSizeSelect`                                                                                                                                   |
@@ -57,7 +57,7 @@ Server state (loading, error, caching, deduplication) is exactly what RTK Query 
 
 ### Network management
 
-- **Debounce (300 ms)** on the search input. Google Books has a small anonymous quota and answers HTTP 429 when it is exceeded; one request per keystroke would exhaust it quickly. A burst of typing becomes a single request, while the input itself stays instantly responsive (local state).
+- **One request per typed character, as the brief requires** ("update the results for every new character"). There is deliberately no debounce. The cost is more traffic against Google's small anonymous quota, so the rest of the strategy is about keeping that cost low and the UI correct: obsolete requests are aborted, the RTK Query cache deduplicates repeated arguments, and a 429 is handled explicitly (below). The input itself is local state and stays instantly responsive.
 - **No stale overwrites.** Results are keyed by arguments, and the UI only reads the entry matching the _current_ arguments, so a slow response for an old query can never replace a newer one.
 - **Obsolete requests are aborted.** When the arguments change (or the query is cleared), the in-flight request is cancelled through its `AbortSignal` (`useBookSearch`). Stale responses could not overwrite newer ones anyway; the benefit is not wasting bandwidth and quota on results nobody will see. Aborting happens only when the args really change, so React StrictMode's effect re-run does not cancel its own request.
 - **No flicker between pages.** While the next page of the same query loads, the previous results and the paginator stay on screen (dimmed, `aria-busy`); the skeleton is only shown for the first load of a query.
@@ -67,14 +67,14 @@ Server state (loading, error, caching, deduplication) is exactly what RTK Query 
 
 ### Why the URL is the source of truth
 
-`q`, `page` and `pageSize` live in the query string (`useSearchParams`, wrapped by `useSearchState`). Back/forward, refresh, shareable links and "detail page, then back to the same results" work without extra code. The query string is validated on read (`parseSearchState`): unknown page sizes and out-of-range pages fall back to safe values. The input text is local state, synced to the URL after the debounce (history entries are _replaced_ while typing, _pushed_ on page changes). A small Redux slice only holds a UI preference (the preferred page size, used as the default when the URL has none). Changing the query or the page size resets to page 1. The detail link carries the results query string in the router location state, so "Back to results" returns to the exact same view.
+`q`, `page` and `pageSize` live in the query string (`useSearchParams`, wrapped by `useSearchState`). Back/forward, refresh, shareable links and "detail page, then back to the same results" work without extra code. The query string is validated on read (`parseSearchState`): unknown page sizes and invalid pages fall back to safe values. The input text is local state, written to the URL on every change (history entries are _replaced_ while typing, _pushed_ on page changes) and re-read from it only on browser back/forward. A small Redux slice only holds a UI preference (the preferred page size, used as the default when the URL has none). Changing the query or the page size resets to page 1. The detail link carries the results query string in the router location state, so "Back to results" returns to the exact same view.
 
 ## Known Google Books API quirks (and how they are handled)
 
-- **`totalItems` is approximate** and can change from page to page. It is capped at `MAX_TOTAL_RESULTS` (360, a multiple of every page size so the last page is never partial), and shrunk as soon as a short or empty page reveals the real end (`getEffectiveTotal`).
-- **Capped totals are shown honestly:** when Google estimates more than the cap, the summary reads "Showing 1-10 of 360+ results" instead of claiming an exact number, and navigation stops at the cap.
-- **Pages past the real end can come back empty.** The UI shows "No more results" with a button to jump to the last valid page. Page numbers in the URL are clamped to the reachable range.
-- **Anonymous quota / 429**: see above (debounce, no auto-retry on 429, clear message).
+- **`totalItems` is approximate** and can change from page to page. The page count is `ceil(totalItems / pageSize)` straight from the API (no artificial cap), corrected by what the current page proves: a short or empty page is the real end, so the effective total shrinks and the paginator stops there (`getEffectiveTotal`).
+- **Large page counts** stay usable thanks to the windowed paginator (first, previous, a window around the current page with ellipses, next, last).
+- **Deep pages may come back empty or be rejected (HTTP 400); both are treated as the end of the results.** This is a defensive choice: Google does not document it. Either way the UI shows "No more results" with one button that lands on a page that has results: the app remembers, per query, which pages returned data and where an empty page was seen (`useResultBounds`), so a broad query with an overestimated total never makes the user walk back one empty page at a time. The paginator is capped by what is proven. A non-numeric or non-positive `?page` in the URL falls back to 1 (and the URL is corrected).
+- **Anonymous quota / 429**: one request per keystroke makes this the most likely failure. It is never auto-retried (it would only burn more quota); the user sees a clear message and a Retry button.
 - Descriptions contain HTML and covers are served over `http` with a page-curl parameter: both are normalized in `features/books/mappers.ts` (HTML is stripped for lists and sanitized with DOMPurify for the detail page; covers are upgraded to `https`).
 - `items` is omitted entirely when there are no results.
 
@@ -90,8 +90,8 @@ src/
   services/            googleBooksApi.ts: RTK Query API (base query, retry policy, endpoints)
   features/books/
     components/        BookCard, BookList, BookCover, BookListSkeleton, BookBackLink
-    hooks/             useDebouncedValue, useBookSearch, useSearchState
-    constants.ts       placeholder URL, page sizes, debounce delay, results cap
+    hooks/             useBookSearch, useSearchState
+    constants.ts       placeholder URL, page sizes
     types.ts           API types (Volume, VolumeInfo, VolumesResponse) and domain Book
     mappers.ts         Volume -> Book
     pagination.ts      pure pagination math
@@ -106,6 +106,6 @@ src/
 
 ## Testing
 
-Unit tests cover the mapper (placeholder, http to https, HTML stripping), pagination math, URL parsing and the debounce hook. Integration tests render the real routes against a mocked network (MSW): typing triggers one debounced request and renders results, page size changes, paginator navigation sends the right `startIndex`, 429 error and retry, no results, past-the-end pages, back navigation from the detail page, the detail page `infoLink`, 404 routes.
+Unit tests cover the mapper (placeholder, http to https, HTML stripping), pagination math and URL parsing. Integration tests render the real routes against a mocked network (MSW): every typed character triggers a request and only the last results are shown, page size changes, paginator navigation sends the right `startIndex`, 429 error and retry, no results, past-the-end pages, back navigation from the detail page, the detail page `infoLink`, 404 routes.
 
-The app is rendered inside `<StrictMode>` in tests, like in `main.tsx`. Network behaviour is covered explicitly: out-of-order responses, real request cancellation (the MSW handler observes `request.signal` abort), no abort on StrictMode re-runs, cache hits when returning to a visited page, and previous results kept while a page loads. jsdom ships its own `AbortSignal`, which Node's `fetch` rejects, so tests run in a tiny custom environment (`src/test/jsdom-node-abort.ts`) that is jsdom plus Node's native `AbortController`/`AbortSignal`.
+The app is rendered inside `<StrictMode>` in tests, like in `main.tsx`. Network behaviour is covered explicitly: one request per character with every obsolete one aborted, out-of-order responses, real request cancellation (the MSW handler observes `request.signal` abort), no abort on StrictMode re-runs, cache hits when returning to a visited page, and previous results kept while a page loads. jsdom ships its own `AbortSignal`, which Node's `fetch` rejects, so tests run in a tiny custom environment (`src/test/jsdom-node-abort.ts`) that is jsdom plus Node's native `AbortController`/`AbortSignal`.

@@ -1,5 +1,3 @@
-import { MAX_TOTAL_RESULTS } from './constants';
-
 export type PageItem = number | 'ellipsis-start' | 'ellipsis-end';
 
 /** Zero-based `startIndex` expected by the API for a 1-based page. */
@@ -17,8 +15,9 @@ export function clampPage(page: number, totalPages: number): number {
 }
 
 /**
- * Google's `totalItems` is an estimate that changes between pages. We cap it, and shrink it
- * as soon as a page proves the real end was reached (short or empty page).
+ * Google's `totalItems` is only an estimate that changes between pages. The page count is
+ * derived from it, corrected by what the current page proves: a short or empty page is the real
+ * end of the results, and a full page means there are at least `startIndex + itemCount` items.
  */
 export function getEffectiveTotal(params: {
   totalItems: number;
@@ -27,10 +26,9 @@ export function getEffectiveTotal(params: {
   pageSize: number;
 }): number {
   const { totalItems, startIndex, itemCount, pageSize } = params;
-  const capped = Math.min(totalItems, MAX_TOTAL_RESULTS);
-  if (itemCount === 0) return Math.min(capped, startIndex);
-  if (itemCount < pageSize) return Math.min(capped, startIndex + itemCount);
-  return capped;
+  if (itemCount === 0) return Math.min(totalItems, startIndex);
+  if (itemCount < pageSize) return startIndex + itemCount;
+  return Math.max(totalItems, startIndex + itemCount);
 }
 
 /**
@@ -57,4 +55,40 @@ export function getPageItems(current: number, totalPages: number, siblings = 1):
 
 function range(from: number, to: number): number[] {
   return Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
+}
+
+/**
+ * What the pages already fetched for one query prove about where its results end:
+ * - `goodEnd`: items up to this offset exist (the largest `startIndex + itemCount` seen);
+ * - `badStart`: nothing exists from this offset on (the smallest start of an empty/rejected page,
+ *   or the exact end shown by a short page).
+ */
+export interface ResultBounds {
+  goodEnd: number;
+  badStart: number;
+}
+
+export const NO_BOUNDS: ResultBounds = { goodEnd: 0, badStart: Number.POSITIVE_INFINITY };
+
+export function recordPage(
+  bounds: ResultBounds,
+  page: { startIndex: number; itemCount: number; pageSize: number },
+): ResultBounds {
+  const { startIndex, itemCount, pageSize } = page;
+  if (itemCount === 0) return { ...bounds, badStart: Math.min(bounds.badStart, startIndex) };
+  const end = startIndex + itemCount;
+  return {
+    goodEnd: Math.max(bounds.goodEnd, end),
+    badStart: itemCount < pageSize ? Math.min(bounds.badStart, end) : bounds.badStart,
+  };
+}
+
+/** Narrows an estimated total with the known bounds (never below what was seen). */
+export function applyBounds(total: number, bounds: ResultBounds): number {
+  return Math.max(bounds.goodEnd, Math.min(total, bounds.badStart));
+}
+
+/** Last page known to contain results (0 when no page with results was seen for the query). */
+export function getLastKnownPage(bounds: ResultBounds, pageSize: number): number {
+  return getTotalPages(bounds.goodEnd, pageSize);
 }

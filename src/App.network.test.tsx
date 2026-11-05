@@ -1,8 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PAGE_SIZES, MAX_TOTAL_RESULTS } from './features/books/constants';
+import { describe, expect, it } from 'vitest';
 import { makeResponse, makeVolume } from './test/fixtures';
 import { renderApp } from './test/renderApp';
 import { server, VOLUMES_URL } from './test/server';
@@ -31,33 +30,53 @@ function useEchoHandler(slow: Record<string, number> = {}) {
 }
 
 describe('network management', () => {
-  afterEach(() => vi.useRealTimers());
+  it('fires one request per typed character and aborts every obsolete one', async () => {
+    const { requested, aborted } = useEchoHandler({ d: 1500, du: 1500 });
+    renderApp('/');
+
+    await userEvent.type(searchbox(), 'dun');
+    expect(await screen.findByRole('heading', { name: 'Result dun' })).toBeInTheDocument();
+
+    expect(requested).toEqual(['d', 'du', 'dun']);
+    await waitFor(() => expect(aborted).toEqual(['d', 'du']));
+    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(1);
+  });
 
   it('never shows a slow, out-of-order response over a newer one', async () => {
     const { requested } = useEchoHandler({ du: 800 });
     renderApp('/');
 
     await userEvent.type(searchbox(), 'du');
-    await sleep(400); // debounce fired: the slow "du" request is in flight
-    await userEvent.type(searchbox(), 'ne');
+    await userEvent.type(searchbox(), 'ne'); // "du" is still in flight
 
     expect(await screen.findByRole('heading', { name: 'Result dune' })).toBeInTheDocument();
     await sleep(900); // long enough for the old response to have arrived, if it were not aborted
-    expect(requested).toEqual(['du', 'dune']);
+    expect(requested).toEqual(['d', 'du', 'dun', 'dune']);
     expect(screen.queryByRole('heading', { name: 'Result du' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Result dune' })).toBeInTheDocument();
   });
 
-  it('aborts the obsolete in-flight request when the query changes', async () => {
-    const { aborted } = useEchoHandler({ du: 2000 });
+  it('serves a previous query from the cache when the text goes back to it', async () => {
+    const { requested } = useEchoHandler();
     renderApp('/');
 
     await userEvent.type(searchbox(), 'du');
-    await sleep(400);
-    await userEvent.type(searchbox(), 'ne');
-    await screen.findByRole('heading', { name: 'Result dune' });
+    await screen.findByRole('heading', { name: 'Result du' });
+    await userEvent.type(searchbox(), '{Backspace}');
+    await screen.findByRole('heading', { name: 'Result d' });
+    await userEvent.type(searchbox(), 'u');
+    await screen.findByRole('heading', { name: 'Result du' });
 
-    await waitFor(() => expect(aborted).toEqual(['du']));
+    expect(requested).toEqual(['d', 'du']); // returning to "du" costs no request
+  });
+
+  it('sends no request for whitespace-only input', async () => {
+    const { requested } = useEchoHandler();
+    renderApp('/');
+    await userEvent.type(searchbox(), '   ');
+    await sleep(100);
+    expect(requested).toEqual([]);
+    expect(screen.getByText('Find your next book')).toBeInTheDocument();
   });
 
   it('does not abort anything when StrictMode re-runs effects for the same args', async () => {
@@ -75,9 +94,9 @@ describe('network management', () => {
     renderApp('/?q=du');
     await sleep(100); // "du" is in flight
 
-    await userEvent.type(searchbox(), 'ne');
+    await userEvent.type(searchbox(), 'n');
 
-    expect(await screen.findByRole('heading', { name: 'Result dune' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Result dun' })).toBeInTheDocument();
     await waitFor(() => expect(aborted).toEqual(['du']));
   });
 
@@ -128,11 +147,7 @@ describe('page changes', () => {
     expect(document.querySelector('[aria-busy="true"]')).toBeNull();
   });
 
-  it('never shows a partial last page: the cap divides every page size', () => {
-    for (const size of PAGE_SIZES) expect(MAX_TOTAL_RESULTS % size).toBe(0);
-  });
-
-  it('caps navigation, reports "360+" and writes the clamped page back to the URL', async () => {
+  it('derives the page count from the API total, with a windowed paginator', async () => {
     server.use(
       http.get(VOLUMES_URL, ({ request }) => {
         const params = new URL(request.url).searchParams;
@@ -143,15 +158,80 @@ describe('page changes', () => {
     );
     renderApp('/?q=dune&pageSize=15&page=27');
 
-    expect(await screen.findByText(/Showing 346.360 of 360\+ results/)).toBeInTheDocument();
-    expect(screen.getByTestId('location')).toHaveTextContent('/?q=dune&pageSize=15&page=24');
+    // 2000 / 15 -> 134 pages; no cap, no "+" label.
+    expect(await screen.findByText(/Showing 391.405 of about 2000 results/)).toBeInTheDocument();
+    expect(paginator().getByRole('button', { name: 'Page 134' })).toBeInTheDocument();
+    expect(paginator().getByRole('button', { name: 'Page 27' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(paginator().getAllByRole('button').length).toBeLessThan(12); // windowed
+  });
+
+  it('stops at the real end when Google overestimates the total', async () => {
+    server.use(
+      http.get(VOLUMES_URL, ({ request }) => {
+        const start = Number(new URL(request.url).searchParams.get('startIndex'));
+        return HttpResponse.json(makeResponse(start >= 40 ? 4 : 10, 1000, start));
+      }),
+    );
+    renderApp('/?q=dune&page=5');
+
+    expect(await screen.findByText(/Showing 41.44 of about 44 results/)).toBeInTheDocument();
     expect(paginator().getByRole('button', { name: 'Last page' })).toBeDisabled();
+    expect(paginator().getByRole('button', { name: 'Page 5' })).toBeInTheDocument();
+    expect(paginator().queryByRole('button', { name: 'Page 6' })).not.toBeInTheDocument();
+  });
+
+  it('treats a 400 on a deep page as the end and lands on a page with results in one click', async () => {
+    server.use(
+      http.get(VOLUMES_URL, ({ request }) => {
+        const start = Number(new URL(request.url).searchParams.get('startIndex'));
+        return start >= 1000
+          ? HttpResponse.json({ error: { code: 400 } }, { status: 400 })
+          : HttpResponse.json(makeResponse(10, 5000, start));
+      }),
+    );
+    renderApp('/?q=dune');
+    await screen.findByRole('heading', { name: 'Book id1' });
+
+    await userEvent.click(paginator().getByRole('button', { name: 'Last page' })); // page 500
+    expect(await screen.findByText('No more results')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /last page/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Book id1' })).toBeInTheDocument();
+  });
+
+  it('on an overestimated total, one click lands on the last page that has results', async () => {
+    const starts: number[] = [];
+    server.use(
+      http.get(VOLUMES_URL, ({ request }) => {
+        const start = Number(new URL(request.url).searchParams.get('startIndex'));
+        starts.push(start);
+        // Google estimates 2000 items, but the data really ends at 30.
+        return HttpResponse.json(
+          start >= 30 ? { totalItems: 2000 } : makeResponse(10, 2000, start),
+        );
+      }),
+    );
+    renderApp('/?q=dune');
+    await screen.findByRole('heading', { name: 'Book id1' });
+    await userEvent.click(paginator().getByRole('button', { name: 'Page 2' }));
+    await screen.findByRole('heading', { name: 'Book id11' });
+    await userEvent.click(paginator().getByRole('button', { name: 'Page 3' }));
+    await screen.findByRole('heading', { name: 'Book id21' });
+
+    await userEvent.click(paginator().getByRole('button', { name: 'Last page' })); // page 200: empty
+    expect(await screen.findByText('No more results')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /last page/i }));
+
+    // Straight back to page 3 (cached): no walk through empty pages 199, 198...
+    expect(await screen.findByRole('heading', { name: 'Book id21' })).toBeInTheDocument();
+    expect(starts).toEqual([0, 10, 20, 1990]);
   });
 });
 
 describe('search input', () => {
-  afterEach(() => vi.useRealTimers());
-
   it('clear empties the query immediately and returns focus to the input', async () => {
     renderApp('/?q=dune');
     await screen.findByRole('heading', { name: 'Book id1' });
@@ -164,6 +244,32 @@ describe('search input', () => {
     expect(screen.getByText('Find your next book')).toBeInTheDocument();
   });
 
+  it('keeps every typed character, even when typing is faster than the URL updates', async () => {
+    useEchoHandler();
+    renderApp('/');
+    const input = searchbox();
+
+    await act(async () => {
+      for (const value of ['a', 'ab', 'abc', 'abcd'])
+        fireEvent.change(input, { target: { value } });
+    });
+
+    expect(input).toHaveValue('abcd');
+    expect(screen.getByTestId('location')).toHaveTextContent('/?q=abcd');
+    expect(await screen.findByRole('heading', { name: 'Result abcd' })).toBeInTheDocument();
+  });
+
+  it('keeps every character of a burst typed with no delay between keystrokes', async () => {
+    useEchoHandler();
+    renderApp('/');
+
+    await userEvent.setup({ delay: null }).type(searchbox(), 'abcdefgh');
+
+    expect(searchbox()).toHaveValue('abcdefgh');
+    expect(await screen.findByRole('heading', { name: 'Result abcdefgh' })).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/?q=abcdefgh');
+  });
+
   it('searches again when the same text is retyped right after Clear', async () => {
     const { requested } = useEchoHandler();
     renderApp('/');
@@ -171,43 +277,23 @@ describe('search input', () => {
     await userEvent.type(searchbox(), 'ai');
     await screen.findByRole('heading', { name: 'Result ai' });
     await userEvent.click(screen.getByRole('button', { name: 'Clear search' }));
-    await userEvent.type(searchbox(), 'ai'); // no pause: well within the debounce window
+    await userEvent.type(searchbox(), 'ai');
 
     await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/?q=ai'));
     expect(await screen.findByRole('heading', { name: 'Result ai' })).toBeInTheDocument();
     expect(requested.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('does not lose a character typed while its own debounced commit is navigating', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    renderApp('/');
-    // Record every URL the app goes through.
-    const urls: string[] = [];
-    const observer = new MutationObserver(() =>
-      urls.push(screen.getByTestId('location').textContent ?? ''),
-    );
-    observer.observe(screen.getByTestId('location'), {
-      childList: true,
-      characterData: true,
-      subtree: true,
-    });
+  it('follows the URL on browser back/forward', async () => {
+    useEchoHandler();
+    renderApp(['/?q=one', '/?q=two']);
+    await screen.findByRole('heading', { name: 'Result two' });
+    expect(searchbox()).toHaveValue('two');
 
-    fireEvent.change(searchbox(), { target: { value: 'ab' } });
-    // The debounce fires and, in the same batch, the user types one more character.
-    await act(async () => {
-      vi.advanceTimersByTime(300);
-      fireEvent.change(searchbox(), { target: { value: 'abc' } });
-    });
+    await userEvent.click(screen.getByRole('button', { name: 'history back' }));
 
-    // The stale "ab" is not committed; the typed character survives and "abc" is committed after its debounce.
-    expect(searchbox()).toHaveValue('abc');
-    await act(async () => {
-      vi.advanceTimersByTime(300);
-    });
-    expect(searchbox()).toHaveValue('abc');
-    expect(screen.getByTestId('location')).toHaveTextContent('/?q=abc');
-    observer.disconnect();
-    expect(urls).not.toContain('/?q=ab'); // the stale text is never committed
+    expect(searchbox()).toHaveValue('one');
+    expect(await screen.findByRole('heading', { name: 'Result one' })).toBeInTheDocument();
   });
 });
 

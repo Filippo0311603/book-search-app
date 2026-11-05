@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_TOTAL_RESULTS } from './constants';
 import {
+  NO_BOUNDS,
+  applyBounds,
   clampPage,
   getEffectiveTotal,
+  getLastKnownPage,
   getPageItems,
   getStartIndex,
   getTotalPages,
+  recordPage,
 } from './pagination';
 import { parseSearchState } from './searchParams';
 
@@ -31,8 +34,14 @@ describe('pagination math', () => {
 
 describe('getEffectiveTotal', () => {
   const base = { startIndex: 0, itemCount: 10, pageSize: 10 };
-  it('caps the estimated total', () => {
-    expect(getEffectiveTotal({ ...base, totalItems: 1_000_000 })).toBe(MAX_TOTAL_RESULTS);
+  it('uses the API total as is, however large: no artificial cap', () => {
+    expect(getEffectiveTotal({ ...base, totalItems: 1_000_000 })).toBe(1_000_000);
+    expect(getTotalPages(1_000_000, 10)).toBe(100_000);
+  });
+  it('never reports fewer items than the page just proved to exist', () => {
+    expect(getEffectiveTotal({ totalItems: 12, startIndex: 20, itemCount: 10, pageSize: 10 })).toBe(
+      30,
+    );
   });
   it('shrinks to the real end on a short page', () => {
     expect(getEffectiveTotal({ totalItems: 300, startIndex: 20, itemCount: 4, pageSize: 10 })).toBe(
@@ -68,10 +77,37 @@ describe('parseSearchState', () => {
     expect(parse('q=%20dune%20')).toEqual({ q: 'dune', page: 1, pageSize: 10 });
   });
   it('rejects unsupported page sizes and invalid pages', () => {
+    expect(parse('q=a&page=0').page).toBe(1);
     expect(parse('q=a&pageSize=7&page=abc')).toEqual({ q: 'a', page: 1, pageSize: 10 });
     expect(parse('q=a&page=-4').page).toBe(1);
   });
-  it('clamps pages beyond the reachable range', () => {
-    expect(parse('q=a&pageSize=20&page=999').page).toBe(MAX_TOTAL_RESULTS / 20);
+  it('keeps large pages: the upper bound depends on the API total, checked once results arrive', () => {
+    expect(parse('q=a&pageSize=20&page=999').page).toBe(999);
+  });
+});
+
+describe('result bounds', () => {
+  it('starts unbounded', () => {
+    expect(applyBounds(2000, NO_BOUNDS)).toBe(2000);
+    expect(getLastKnownPage(NO_BOUNDS, 10)).toBe(0);
+  });
+  it('remembers the furthest page with data', () => {
+    let b = recordPage(NO_BOUNDS, { startIndex: 0, itemCount: 10, pageSize: 10 });
+    b = recordPage(b, { startIndex: 20, itemCount: 10, pageSize: 10 });
+    b = recordPage(b, { startIndex: 10, itemCount: 10, pageSize: 10 }); // order does not matter
+    expect(b).toEqual({ goodEnd: 30, badStart: Number.POSITIVE_INFINITY });
+    expect(getLastKnownPage(b, 10)).toBe(3);
+    expect(getLastKnownPage(b, 15)).toBe(2); // the page holding item 30
+  });
+  it('an empty page bounds the end, a short page fixes it', () => {
+    let b = recordPage(NO_BOUNDS, { startIndex: 20, itemCount: 10, pageSize: 10 });
+    b = recordPage(b, { startIndex: 1990, itemCount: 0, pageSize: 10 });
+    expect(applyBounds(2000, b)).toBe(1990);
+    b = recordPage(b, { startIndex: 40, itemCount: 4, pageSize: 10 });
+    expect(applyBounds(2000, b)).toBe(44);
+  });
+  it('never narrows below what was seen', () => {
+    const b = recordPage(NO_BOUNDS, { startIndex: 50, itemCount: 10, pageSize: 10 });
+    expect(applyBounds(20, b)).toBe(60);
   });
 });

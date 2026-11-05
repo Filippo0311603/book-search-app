@@ -26,20 +26,20 @@ describe('search page', () => {
     renderApp('/');
     expect(screen.getByText('Find your next book')).toBeInTheDocument();
     await userEvent.type(screen.getByRole('searchbox', { name: /search books/i }), '   ');
-    await act(() => new Promise((resolve) => setTimeout(resolve, 450))); // longer than the debounce
+    await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
     expect(calls).toHaveLength(0);
   });
 
-  it('debounces typing into a single request and renders the results', async () => {
+  it('searches with the trimmed query and renders the results', async () => {
     const calls = recordSearches();
     renderApp('/');
-    await userEvent.type(screen.getByRole('searchbox'), ' dune ');
+    await userEvent.type(screen.getByRole('searchbox'), 'dune ');
 
     expect(await screen.findByRole('heading', { name: 'Book id1' })).toBeInTheDocument();
-    expect(calls).toHaveLength(1);
-    expect(calls[0]?.get('q')).toBe('dune');
-    expect(calls[0]?.get('startIndex')).toBe('0');
-    expect(calls[0]?.get('maxResults')).toBe('10');
+    const last = calls.at(-1);
+    expect(last?.get('q')).toBe('dune'); // the trailing space is trimmed
+    expect(last?.get('startIndex')).toBe('0');
+    expect(last?.get('maxResults')).toBe('10');
     expect(screen.getAllByRole('article')).toHaveLength(10);
   });
 
@@ -127,6 +127,20 @@ describe('search page', () => {
       expect(screen.getByTestId('location')).toHaveTextContent('/?q=dune&page=2'),
     );
     expect(await screen.findByRole('heading', { name: 'Book id11' })).toBeInTheDocument();
+  });
+});
+
+describe('navigation', () => {
+  it('clears the search box and shows the empty state when the logo is clicked', async () => {
+    renderApp('/?q=dune');
+    await screen.findByRole('heading', { name: 'Book id1' });
+    expect(screen.getByRole('searchbox')).toHaveValue('dune');
+
+    await userEvent.click(screen.getByRole('link', { name: 'BookSearch' }));
+
+    expect(screen.getByRole('searchbox')).toHaveValue('');
+    expect(screen.getByText('Find your next book')).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/);
   });
 });
 

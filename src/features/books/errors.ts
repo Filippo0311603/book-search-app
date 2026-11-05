@@ -7,6 +7,14 @@ export function isRateLimitError(error: QueryError): boolean {
   return Boolean(error && 'status' in error && error.status === 429);
 }
 
+/**
+ * Deep pages may come back empty or be rejected with HTTP 400 (not documented by Google, so
+ * this is a defensive choice): both are treated as the end of the results.
+ */
+export function isBadRequestError(error: QueryError): boolean {
+  return Boolean(error && 'status' in error && error.status === 400);
+}
+
 export function isNotFoundError(error: QueryError): boolean {
   return Boolean(error && 'status' in error && error.status === 404);
 }

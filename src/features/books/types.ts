@@ -55,7 +55,7 @@ export interface Book {
 
 export interface SearchResult {
   books: Book[];
-  /** Estimated by Google, see MAX_TOTAL_RESULTS. */
+  /** Estimated by Google: it can be inaccurate and change between pages. */
   totalItems: number;
 }
 
