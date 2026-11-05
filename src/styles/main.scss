@@ -1,3 +1,7 @@
+// SOURCE OF TRUTH for the app styles. `main.css` next to this file is GENERATED from it
+// (`npm run build:css`, run automatically by `npm run dev` and `npm run build`) and is committed
+// on purpose: CodeSandbox's free browser sandbox uses its own bundler, which cannot compile Sass
+// (its Sass worker is blocked). CI fails if the committed CSS is out of date. Never edit it by hand.
 @import 'bootstrap/scss/functions';
 @import 'variables';
 @import 'bootstrap/scss/bootstrap';

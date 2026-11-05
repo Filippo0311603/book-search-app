@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { useNavigationType } from 'react-router';
 import { useAppDispatch } from '../app/hooks';
+import {
+  EmojiFrownIcon,
+  ExclamationTriangleIcon,
+  HourglassSplitIcon,
+  SearchIcon,
+  SignpostSplitIcon,
+} from '../components/icons';
 import { PageSizeSelect } from '../components/PageSizeSelect';
 import { Paginator } from '../components/Paginator';
 import { SearchBar } from '../components/SearchBar';
@@ -48,16 +55,19 @@ export function SearchPage() {
 
   // What the pages fetched so far prove about the end of this query's results.
   const isRejectedDeepPage = search.isError && isBadRequestError(search.error) && page > 1;
+  // The rejection is checked first: while a deep page is rejected the previous page's data may
+  // still be on screen (`search.data`), and the rejection is the more recent observation.
   const bounds = useResultBounds(
     q,
-    search.data && search.dataArgs
-      ? {
-          startIndex: getStartIndex(search.dataArgs.page, search.dataArgs.pageSize),
-          itemCount: search.data.books.length,
-          pageSize: search.dataArgs.pageSize,
-        }
-      : isRejectedDeepPage
-        ? { startIndex: getStartIndex(page, pageSize), itemCount: 0, pageSize }
+    isRejectedDeepPage
+      ? { startIndex: getStartIndex(page, pageSize), itemCount: 0, pageSize, totalItems: 0 }
+      : search.data && search.dataArgs
+        ? {
+            startIndex: getStartIndex(search.dataArgs.page, search.dataArgs.pageSize),
+            itemCount: search.data.books.length,
+            pageSize: search.dataArgs.pageSize,
+            totalItems: search.data.totalItems,
+          }
         : null,
   );
 
@@ -100,7 +110,7 @@ export function SearchPage() {
     const target = Math.max(1, Math.min(known || estimatedLastPage || 1, emptyPage - 1));
     return (
       <StatusMessage
-        icon="bi-signpost-split"
+        icon={SignpostSplitIcon}
         title="No more results"
         action={{
           label: known || estimatedLastPage ? 'Go to the last page' : 'Go to the first page',
@@ -115,7 +125,7 @@ export function SearchPage() {
   function renderResults() {
     if (!q) {
       return (
-        <StatusMessage icon="bi-search" title="Find your next book">
+        <StatusMessage icon={SearchIcon} title="Find your next book">
           Start typing a title, an author or an ISBN: results appear as you type.
         </StatusMessage>
       );
@@ -127,7 +137,7 @@ export function SearchPage() {
     if (search.isError) {
       return (
         <StatusMessage
-          icon={isRateLimitError(search.error) ? 'bi-hourglass-split' : 'bi-exclamation-triangle'}
+          icon={isRateLimitError(search.error) ? HourglassSplitIcon : ExclamationTriangleIcon}
           title="Search failed"
           role="alert"
           action={{ label: 'Retry', onClick: search.retry }}
@@ -164,7 +174,7 @@ export function SearchPage() {
         );
       }
       return (
-        <StatusMessage icon="bi-emoji-frown" title="No results">
+        <StatusMessage icon={EmojiFrownIcon} title="No results">
           Nothing found for &ldquo;{q}&rdquo;. Try different keywords.
         </StatusMessage>
       );

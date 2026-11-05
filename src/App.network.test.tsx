@@ -168,11 +168,11 @@ describe('page changes', () => {
     expect(paginator().getAllByRole('button').length).toBeLessThan(12); // windowed
   });
 
-  it('stops at the real end when Google overestimates the total', async () => {
+  it('stops at the real end when a short page is also the last page by the estimate', async () => {
     server.use(
       http.get(VOLUMES_URL, ({ request }) => {
         const start = Number(new URL(request.url).searchParams.get('startIndex'));
-        return HttpResponse.json(makeResponse(start >= 40 ? 4 : 10, 1000, start));
+        return HttpResponse.json(makeResponse(start >= 40 ? 4 : 10, 47, start));
       }),
     );
     renderApp('/?q=dune&page=5');
@@ -200,6 +200,52 @@ describe('page changes', () => {
     await userEvent.click(screen.getByRole('button', { name: /last page/i }));
 
     expect(await screen.findByRole('heading', { name: 'Book id1' })).toBeInTheDocument();
+  });
+
+  it('a single short page does not cap the page count; only an empty page does', async () => {
+    server.use(
+      http.get(VOLUMES_URL, ({ request }) => {
+        const start = Number(new URL(request.url).searchParams.get('startIndex'));
+        // Google returns 7 items on page 2 although more exist; the data really ends at 30.
+        if (start === 10) return HttpResponse.json(makeResponse(7, 1000, start));
+        return HttpResponse.json(
+          start >= 30 ? { totalItems: 1000 } : makeResponse(10, 1000, start),
+        );
+      }),
+    );
+    renderApp('/?q=dune&page=2');
+    expect(await screen.findByText(/Showing 11.17 of about 1000 results/)).toBeInTheDocument();
+    expect(paginator().getByRole('button', { name: 'Last page' })).toBeEnabled();
+    expect(paginator().getByRole('button', { name: 'Next page' })).toBeEnabled();
+
+    await userEvent.click(paginator().getByRole('button', { name: 'Page 3' }));
+    await screen.findByRole('heading', { name: 'Book id21' });
+    await userEvent.click(paginator().getByRole('button', { name: 'Last page' })); // page 100: empty
+    expect(await screen.findByText('No more results')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /last page/i }));
+    expect(await screen.findByRole('heading', { name: 'Book id21' })).toBeInTheDocument();
+  });
+
+  it('records a rejected deep page even while the previous page is still on screen', async () => {
+    server.use(
+      http.get(VOLUMES_URL, async ({ request }) => {
+        const start = Number(new URL(request.url).searchParams.get('startIndex'));
+        if (start >= 1000) {
+          return HttpResponse.json({ error: { code: 400 } }, { status: 400 });
+        }
+        return HttpResponse.json(makeResponse(10, 5000, start));
+      }),
+    );
+    renderApp('/?q=dune');
+    await screen.findByRole('heading', { name: 'Book id1' });
+
+    await userEvent.click(paginator().getByRole('button', { name: 'Last page' })); // page 500: 400
+    expect(await screen.findByText('No more results')).toBeInTheDocument();
+    // Back on page 1 the paginator is capped by the rejection: page 500 is no longer offered.
+    await userEvent.click(screen.getByRole('button', { name: /last page/i }));
+    await screen.findByRole('heading', { name: 'Book id1' });
+    expect(paginator().queryByRole('button', { name: 'Page 500' })).not.toBeInTheDocument();
+    expect(paginator().getByRole('button', { name: 'Last page' })).toBeEnabled();
   });
 
   it('on an overestimated total, one click lands on the last page that has results', async () => {

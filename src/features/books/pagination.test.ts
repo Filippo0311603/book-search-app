@@ -43,9 +43,21 @@ describe('getEffectiveTotal', () => {
       30,
     );
   });
-  it('shrinks to the real end on a short page', () => {
-    expect(getEffectiveTotal({ totalItems: 300, startIndex: 20, itemCount: 4, pageSize: 10 })).toBe(
+  it('shrinks to the real end on a short page that is also the last page by the estimate', () => {
+    expect(getEffectiveTotal({ totalItems: 27, startIndex: 20, itemCount: 4, pageSize: 10 })).toBe(
       24,
+    );
+  });
+  it('does not treat a short page in the middle of the results as the end', () => {
+    // Google sometimes returns fewer than maxResults although more items exist.
+    expect(getEffectiveTotal({ totalItems: 300, startIndex: 20, itemCount: 4, pageSize: 10 })).toBe(
+      300,
+    );
+    expect(getTotalPages(300, 10)).toBe(30);
+  });
+  it('treats an empty page as the end whatever the estimate says', () => {
+    expect(getEffectiveTotal({ totalItems: 300, startIndex: 20, itemCount: 0, pageSize: 10 })).toBe(
+      20,
     );
   });
   it('shrinks to the start of an empty page', () => {
@@ -92,22 +104,42 @@ describe('result bounds', () => {
     expect(getLastKnownPage(NO_BOUNDS, 10)).toBe(0);
   });
   it('remembers the furthest page with data', () => {
-    let b = recordPage(NO_BOUNDS, { startIndex: 0, itemCount: 10, pageSize: 10 });
-    b = recordPage(b, { startIndex: 20, itemCount: 10, pageSize: 10 });
-    b = recordPage(b, { startIndex: 10, itemCount: 10, pageSize: 10 }); // order does not matter
+    let b = recordPage(NO_BOUNDS, { startIndex: 0, itemCount: 10, pageSize: 10, totalItems: 2000 });
+    b = recordPage(b, { startIndex: 20, itemCount: 10, pageSize: 10, totalItems: 2000 });
+    b = recordPage(b, { startIndex: 10, itemCount: 10, pageSize: 10, totalItems: 2000 }); // order does not matter
     expect(b).toEqual({ goodEnd: 30, badStart: Number.POSITIVE_INFINITY });
     expect(getLastKnownPage(b, 10)).toBe(3);
     expect(getLastKnownPage(b, 15)).toBe(2); // the page holding item 30
   });
-  it('an empty page bounds the end, a short page fixes it', () => {
-    let b = recordPage(NO_BOUNDS, { startIndex: 20, itemCount: 10, pageSize: 10 });
-    b = recordPage(b, { startIndex: 1990, itemCount: 0, pageSize: 10 });
+  it('a short page in the middle proves what it holds, but not the end', () => {
+    const b = recordPage(NO_BOUNDS, {
+      startIndex: 40,
+      itemCount: 4,
+      pageSize: 10,
+      totalItems: 2000,
+    });
+    expect(b).toEqual({ goodEnd: 44, badStart: Number.POSITIVE_INFINITY });
+    expect(applyBounds(2000, b)).toBe(2000);
+  });
+  it('an empty page bounds the end, a short last page by the estimate fixes it', () => {
+    let b = recordPage(NO_BOUNDS, {
+      startIndex: 20,
+      itemCount: 10,
+      pageSize: 10,
+      totalItems: 2000,
+    });
+    b = recordPage(b, { startIndex: 1990, itemCount: 0, pageSize: 10, totalItems: 2000 });
     expect(applyBounds(2000, b)).toBe(1990);
-    b = recordPage(b, { startIndex: 40, itemCount: 4, pageSize: 10 });
+    b = recordPage(b, { startIndex: 40, itemCount: 4, pageSize: 10, totalItems: 44 });
     expect(applyBounds(2000, b)).toBe(44);
   });
   it('never narrows below what was seen', () => {
-    const b = recordPage(NO_BOUNDS, { startIndex: 50, itemCount: 10, pageSize: 10 });
+    const b = recordPage(NO_BOUNDS, {
+      startIndex: 50,
+      itemCount: 10,
+      pageSize: 10,
+      totalItems: 2000,
+    });
     expect(applyBounds(20, b)).toBe(60);
   });
 });

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
+import type { IconComponent } from './icons';
 
 interface StatusMessageProps {
-  icon: string;
+  icon: IconComponent;
   title: string;
   children?: ReactNode;
   /** `alert` is announced immediately by screen readers (errors); `status` politely. */
@@ -13,7 +14,7 @@ interface StatusMessageProps {
 
 /** Generic centered message used for empty, no-results and error states. */
 export function StatusMessage({
-  icon,
+  icon: Icon,
   title,
   children,
   role = 'status',
@@ -23,7 +24,7 @@ export function StatusMessage({
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
   return (
     <div className="text-center py-5 px-3" role={role}>
-      <i className={`bi ${icon} display-4 text-secondary`} aria-hidden="true" />
+      <Icon className="display-4 text-secondary" />
       <Heading className="h4 mt-3">{title}</Heading>
       {children && <p className="text-secondary mb-3">{children}</p>}
       {action && (

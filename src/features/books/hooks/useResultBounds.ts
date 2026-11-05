@@ -5,6 +5,7 @@ interface PageObservation {
   startIndex: number;
   itemCount: number;
   pageSize: number;
+  totalItems: number;
 }
 
 /**

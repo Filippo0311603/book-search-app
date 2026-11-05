@@ -39,5 +39,9 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Build (tsc -b + vite build)
+      # The build regenerates src/styles/main.css from the SCSS; the committed copy must match.
+      - name: Build (build:css + tsc -b + vite build)
         run: npm run build
+
+      - name: Check the committed CSS is up to date
+        run: git ls-files --error-unmatch src/styles/main.css && git diff --exit-code src/styles/main.css

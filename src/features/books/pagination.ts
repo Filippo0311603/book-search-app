@@ -16,8 +16,12 @@ export function clampPage(page: number, totalPages: number): number {
 
 /**
  * Google's `totalItems` is only an estimate that changes between pages. The page count is
- * derived from it, corrected by what the current page proves: a short or empty page is the real
- * end of the results, and a full page means there are at least `startIndex + itemCount` items.
+ * derived from it, corrected by what the current page proves:
+ * - an empty page is the real end of the results;
+ * - a short page is the real end only when it is also the last page by the estimate
+ *   (see `isShortLastPage`); elsewhere Google just returned fewer items than asked, which does
+ *   not mean there is nothing after it;
+ * - otherwise there are at least `startIndex + itemCount` items.
  */
 export function getEffectiveTotal(params: {
   totalItems: number;
@@ -27,8 +31,27 @@ export function getEffectiveTotal(params: {
 }): number {
   const { totalItems, startIndex, itemCount, pageSize } = params;
   if (itemCount === 0) return Math.min(totalItems, startIndex);
-  if (itemCount < pageSize) return startIndex + itemCount;
+  if (isShortLastPage({ totalItems, startIndex, itemCount, pageSize })) {
+    return startIndex + itemCount;
+  }
   return Math.max(totalItems, startIndex + itemCount);
+}
+
+/**
+ * Google sometimes returns fewer than `maxResults` items although more exist, so a short page
+ * alone proves nothing. It is trusted as the end only when the estimate agrees: the page is short
+ * AND it is the last page by `totalItems`. If the estimate is wrong too, the user is capped
+ * early (the cost we accept); a short page in the middle of a large result set never hides it.
+ * Only an empty page (or a 400) is proof of the end on its own.
+ */
+function isShortLastPage(params: {
+  totalItems: number;
+  startIndex: number;
+  itemCount: number;
+  pageSize: number;
+}): boolean {
+  const { totalItems, startIndex, itemCount, pageSize } = params;
+  return itemCount > 0 && itemCount < pageSize && startIndex + pageSize >= totalItems;
 }
 
 /**
@@ -61,7 +84,7 @@ function range(from: number, to: number): number[] {
  * What the pages already fetched for one query prove about where its results end:
  * - `goodEnd`: items up to this offset exist (the largest `startIndex + itemCount` seen);
  * - `badStart`: nothing exists from this offset on (the smallest start of an empty/rejected page,
- *   or the exact end shown by a short page).
+ *   or the exact end shown by a short page that is also the last page by the estimate).
  */
 export interface ResultBounds {
   goodEnd: number;
@@ -72,14 +95,14 @@ export const NO_BOUNDS: ResultBounds = { goodEnd: 0, badStart: Number.POSITIVE_I
 
 export function recordPage(
   bounds: ResultBounds,
-  page: { startIndex: number; itemCount: number; pageSize: number },
+  page: { startIndex: number; itemCount: number; pageSize: number; totalItems: number },
 ): ResultBounds {
-  const { startIndex, itemCount, pageSize } = page;
+  const { startIndex, itemCount } = page;
   if (itemCount === 0) return { ...bounds, badStart: Math.min(bounds.badStart, startIndex) };
   const end = startIndex + itemCount;
   return {
     goodEnd: Math.max(bounds.goodEnd, end),
-    badStart: itemCount < pageSize ? Math.min(bounds.badStart, end) : bounds.badStart,
+    badStart: isShortLastPage(page) ? Math.min(bounds.badStart, end) : bounds.badStart,
   };
 }
 

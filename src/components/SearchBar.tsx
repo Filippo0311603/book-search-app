@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { SearchIcon, XLgIcon } from './icons';
 
 interface SearchBarProps {
   value: string;
@@ -22,7 +23,7 @@ export function SearchBar({ value, onChange, onClear }: SearchBarProps) {
       </label>
       <div className="input-group input-group-lg">
         <span className="input-group-text" aria-hidden="true">
-          <i className="bi bi-search" />
+          <SearchIcon />
         </span>
         <input
           ref={inputRef}
@@ -41,7 +42,7 @@ export function SearchBar({ value, onChange, onClear }: SearchBarProps) {
             aria-label="Clear search"
             onClick={handleClear}
           >
-            <i className="bi bi-x-lg" aria-hidden="true" />
+            <XLgIcon />
           </button>
         )}
       </div>

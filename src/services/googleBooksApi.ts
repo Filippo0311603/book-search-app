@@ -15,8 +15,13 @@ export const GOOGLE_BOOKS_BASE_URL = 'https://www.googleapis.com/books/v1';
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_RETRIES = 2;
 
-/** Optional: raises the anonymous quota. Appended as `key=` only when defined. */
-const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY || undefined;
+/**
+ * Optional: raises the anonymous quota. Appended as `key=` only when defined.
+ * Read through `process.env` on purpose: it works both in Vite (inlined by `define` in
+ * vite.config.ts) and in CodeSandbox's browser bundler, which reads a `.env` file into
+ * `process.env` but cannot evaluate `import.meta.env`.
+ */
+const apiKey = process.env.VITE_GOOGLE_BOOKS_API_KEY || undefined;
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: GOOGLE_BOOKS_BASE_URL,

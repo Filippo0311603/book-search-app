@@ -1,4 +1,5 @@
 import { useLocation, useParams } from 'react-router';
+import { BoxArrowUpRightIcon, ExclamationTriangleIcon } from '../components/icons';
 import { StatusMessage } from '../components/StatusMessage';
 import type { BookRouteState } from '../features/books/components/BookCard';
 import { BookBackLink } from '../features/books/components/BookBackLink';
@@ -29,7 +30,7 @@ export function BookDetailPage() {
       <>
         <BookBackLink search={from} cameFromResults={cameFromResults} />
         <StatusMessage
-          icon="bi-exclamation-triangle"
+          icon={ExclamationTriangleIcon}
           title={isNotFoundError(error) ? 'Book not found' : 'Could not load the book'}
           role="alert"
           headingLevel={1}
@@ -88,8 +89,7 @@ export function BookDetailPage() {
               rel="noopener noreferrer"
               className="btn btn-primary btn-lg"
             >
-              View on Google Books{' '}
-              <i className="bi bi-box-arrow-up-right ms-1" aria-hidden="true" />
+              View on Google Books <BoxArrowUpRightIcon className="ms-1" />
             </a>
           )}
         </div>

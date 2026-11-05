@@ -1,4 +1,5 @@
 import { Link, Outlet } from 'react-router';
+import { BookHalfIcon } from './icons';
 
 export function Layout() {
   return (
@@ -6,7 +7,7 @@ export function Layout() {
       <header className="navbar navbar-dark bg-dark">
         <div className="container">
           <Link to="/" className="navbar-brand d-flex align-items-center gap-2">
-            <i className="bi bi-book-half text-primary" aria-hidden="true" />
+            <BookHalfIcon className="text-primary" />
             BookSearch
           </Link>
         </div>

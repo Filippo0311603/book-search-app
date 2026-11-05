@@ -1,5 +1,6 @@
 import type { MouseEvent } from 'react';
 import { Link, useNavigate, useNavigationType } from 'react-router';
+import { ArrowLeftIcon } from '../../../components/icons';
 
 interface BookBackLinkProps {
   /** Query string of the results page the user came from (empty when unknown). */
@@ -30,7 +31,7 @@ export function BookBackLink({ search, cameFromResults }: BookBackLinkProps) {
       onClick={handleClick}
       className="btn btn-outline-secondary btn-sm mb-4"
     >
-      <i className="bi bi-arrow-left me-1" aria-hidden="true" />
+      <ArrowLeftIcon className="me-1" />
       Back to results
     </Link>
   );
