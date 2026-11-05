@@ -1,5 +1,7 @@
 # BookSearch
 
+[![CI](https://github.com/Filippo0311603/book-search-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Filippo0311603/book-search-app/actions/workflows/ci.yml)
+
 A responsive single-page app to search books with the [Google Books API](https://developers.google.com/books/docs/v1/reference/volumes/list): live search, paginated results and a detail page.
 
 Built with **Vite, React 19, TypeScript (strict), Redux Toolkit + RTK Query, React Router 7 and Bootstrap 5 (Sass, custom theme)**.
