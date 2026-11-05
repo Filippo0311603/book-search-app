@@ -5,7 +5,7 @@ import type { BookRouteState } from '../features/books/components/BookCard';
 import { BookBackLink } from '../features/books/components/BookBackLink';
 import { BookCover } from '../features/books/components/BookCover';
 import { getErrorMessage, isNotFoundError } from '../features/books/errors';
-import { formatLanguage } from '../features/books/format';
+import { formatLanguage, formatPublishedDate } from '../features/books/format';
 import { useGetBookQuery } from '../services/googleBooksApi';
 
 export function BookDetailPage() {
@@ -45,7 +45,7 @@ export function BookDetailPage() {
   const details: [string, string | undefined][] = [
     ['Authors', book.authors.join(', ') || undefined],
     ['Publisher', book.publisher],
-    ['Published', book.publishedDate],
+    ['Published', formatPublishedDate(book.publishedDate)],
     ['Pages', book.pageCount ? String(book.pageCount) : undefined],
     ['Categories', book.categories.join(', ') || undefined],
     ['Language', formatLanguage(book.language)],
@@ -56,18 +56,18 @@ export function BookDetailPage() {
       <title>{`${book.title} - BookSearch`}</title>
       <BookBackLink search={from} cameFromResults={cameFromResults} />
       <div className="row g-4">
-        <div className="col-12 col-md-4 col-lg-3">
+        <div className="col-12 col-md-4 col-lg-3 text-center text-md-start">
           <BookCover src={book.coverLarge} title={book.title} large />
         </div>
         <div className="col-12 col-md-8 col-lg-9">
           <h1 className="h2 mb-1">{book.title}</h1>
-          {book.subtitle && <p className="lead text-secondary">{book.subtitle}</p>}
+          {book.subtitle && <p className="lead text-body-secondary">{book.subtitle}</p>}
           <dl className="row mb-4">
             {details.map(
               ([label, value]) =>
                 value && (
                   <div key={label} className="col-12 col-sm-6 mb-2">
-                    <dt className="small text-secondary fw-normal">{label}</dt>
+                    <dt className="small text-body-secondary fw-normal">{label}</dt>
                     <dd className="mb-0">{value}</dd>
                   </div>
                 ),

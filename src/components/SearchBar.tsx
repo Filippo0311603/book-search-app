@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import type { RefObject } from 'react';
+import { useFocusShortcut } from '../hooks/useFocusShortcut';
 import { SearchIcon, XLgIcon } from './icons';
 
 interface SearchBarProps {
@@ -6,10 +7,12 @@ interface SearchBarProps {
   onChange: (value: string) => void;
   /** Called when the clear button is used; the input is focused again afterwards. */
   onClear: () => void;
+  /** Owned by the page so it can move focus here (e.g. after a suggested search). */
+  inputRef: RefObject<HTMLInputElement | null>;
 }
 
-export function SearchBar({ value, onChange, onClear }: SearchBarProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+export function SearchBar({ value, onChange, onClear, inputRef }: SearchBarProps) {
+  useFocusShortcut(inputRef, '/');
 
   const handleClear = () => {
     onClear();
@@ -21,29 +24,39 @@ export function SearchBar({ value, onChange, onClear }: SearchBarProps) {
       <label htmlFor="book-search" className="form-label visually-hidden">
         Search books
       </label>
-      <div className="input-group input-group-lg">
-        <span className="input-group-text" aria-hidden="true">
-          <SearchIcon />
-        </span>
-        <input
-          ref={inputRef}
-          id="book-search"
-          type="search"
-          className="form-control"
-          placeholder="Search by title, author, ISBN..."
-          autoComplete="off"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        />
-        {value && (
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
-            aria-label="Clear search"
-            onClick={handleClear}
-          >
-            <XLgIcon />
-          </button>
+      {/* `search-group` draws one focus ring around icon, input and buttons (see _components.scss). */}
+      <div className="position-relative">
+        <div className="input-group input-group-lg search-group">
+          <span className="input-group-text" aria-hidden="true">
+            <SearchIcon />
+          </span>
+          <input
+            ref={inputRef}
+            id="book-search"
+            type="search"
+            className="form-control"
+            placeholder="Search by title, author, ISBN..."
+            autoComplete="off"
+            aria-keyshortcuts="/"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+          />
+          {value ? (
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              aria-label="Clear search"
+              onClick={handleClear}
+            >
+              <XLgIcon />
+            </button>
+          ) : null}
+        </div>
+        {/* Overlay, not an input-group child: the input stays the last child (rounded corners). */}
+        {!value && (
+          <kbd className="search-hint d-none d-md-block" aria-hidden="true">
+            /
+          </kbd>
         )}
       </div>
     </form>

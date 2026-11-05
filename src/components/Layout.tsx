@@ -1,21 +1,36 @@
 import { Link, Outlet } from 'react-router';
 import { BookHalfIcon } from './icons';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Layout() {
   return (
     <div className="d-flex flex-column min-vh-100">
-      <header className="navbar navbar-dark bg-dark">
-        <div className="container">
-          <Link to="/" className="navbar-brand d-flex align-items-center gap-2">
-            <BookHalfIcon className="text-primary" />
-            BookSearch
-          </Link>
-        </div>
+      {/* No fragment navigation: under the router it would push a history entry with no state. */}
+      <a
+        href="#main"
+        className="visually-hidden-focusable skip-link"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
+      >
+        Skip to main content
+      </a>
+      <header>
+        <nav className="navbar navbar-dark bg-dark" aria-label="Main">
+          <div className="container">
+            <Link to="/" className="navbar-brand d-flex align-items-center gap-2">
+              <BookHalfIcon className="text-primary" />
+              BookSearch
+            </Link>
+            <ThemeToggle />
+          </div>
+        </nav>
       </header>
-      <main className="container flex-grow-1 py-4">
+      <main id="main" tabIndex={-1} className="container flex-grow-1 py-4">
         <Outlet />
       </main>
-      <footer className="border-top py-3 text-center text-secondary small">
+      <footer className="border-top py-3 text-center text-body-secondary small">
         Data provided by the Google Books API
       </footer>
     </div>

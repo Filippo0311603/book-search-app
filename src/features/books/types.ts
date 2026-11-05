@@ -16,6 +16,7 @@ export interface VolumeInfo {
     small?: string;
     medium?: string;
     large?: string;
+    extraLarge?: string;
   };
 }
 

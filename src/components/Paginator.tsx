@@ -10,13 +10,17 @@ interface PageButtonProps {
   label: string;
   disabled?: boolean;
   active?: boolean;
+  /** Extra classes on the <li>; used to hide the least useful buttons on phones. */
+  className?: string;
   onClick: () => void;
   children: React.ReactNode;
 }
 
-function PageButton({ label, disabled, active, onClick, children }: PageButtonProps) {
+function PageButton({ label, disabled, active, className, onClick, children }: PageButtonProps) {
   return (
-    <li className={`page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`}>
+    <li
+      className={`page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}${className ? ` ${className}` : ''}`}
+    >
       <button
         type="button"
         className="page-link"
@@ -40,7 +44,12 @@ export function Paginator({ currentPage, totalPages, onPageChange }: PaginatorPr
   return (
     <nav aria-label="Search results pages">
       <ul className="pagination pagination-sm flex-wrap justify-content-center mb-0">
-        <PageButton label="First page" disabled={atStart} onClick={() => onPageChange(1)}>
+        <PageButton
+          label="First page"
+          className="d-none d-sm-block"
+          disabled={atStart}
+          onClick={() => onPageChange(1)}
+        >
           <span aria-hidden="true">&laquo;</span>
         </PageButton>
         <PageButton
@@ -73,7 +82,12 @@ export function Paginator({ currentPage, totalPages, onPageChange }: PaginatorPr
         >
           <span aria-hidden="true">&rsaquo;</span>
         </PageButton>
-        <PageButton label="Last page" disabled={atEnd} onClick={() => onPageChange(totalPages)}>
+        <PageButton
+          label="Last page"
+          className="d-none d-sm-block"
+          disabled={atEnd}
+          onClick={() => onPageChange(totalPages)}
+        >
           <span aria-hidden="true">&raquo;</span>
         </PageButton>
       </ul>

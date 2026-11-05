@@ -24,7 +24,7 @@ export function renderApp(initialUrl: string | string[] = '/') {
   const entries = Array.isArray(initialUrl) ? initialUrl : [initialUrl];
   const store = createStore();
   // StrictMode like main.tsx: it re-runs effects, which the request handling must survive.
-  render(
+  const { unmount } = render(
     <StrictMode>
       <Provider store={store}>
         <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
@@ -34,5 +34,5 @@ export function renderApp(initialUrl: string | string[] = '/') {
       </Provider>
     </StrictMode>,
   );
-  return { store };
+  return { store, unmount };
 }

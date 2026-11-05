@@ -11,7 +11,8 @@ export function mapVolume(volume: Volume): Book {
   const info = volume.volumeInfo ?? {};
   const rawThumbnail = info.imageLinks?.thumbnail ?? info.imageLinks?.smallThumbnail;
   const links = info.imageLinks;
-  const rawLarge = links?.large ?? links?.medium ?? links?.small ?? rawThumbnail;
+  const rawLarge =
+    links?.large ?? links?.medium ?? links?.small ?? rawThumbnail ?? links?.extraLarge;
   const rawDescription = info.description ?? '';
 
   return {

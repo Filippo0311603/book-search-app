@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigationType } from 'react-router';
 import { useAppDispatch } from '../app/hooks';
 import {
@@ -14,6 +14,7 @@ import { SearchBar } from '../components/SearchBar';
 import { StatusMessage } from '../components/StatusMessage';
 import { BookList } from '../features/books/components/BookList';
 import { BookListSkeleton } from '../features/books/components/BookListSkeleton';
+import { SuggestedSearches } from '../features/books/components/SuggestedSearches';
 import { PAGE_SIZES } from '../features/books/constants';
 import { getErrorMessage, isBadRequestError, isRateLimitError } from '../features/books/errors';
 import { useBookSearch } from '../features/books/hooks/useBookSearch';
@@ -36,6 +37,7 @@ export function SearchPage() {
   // Every change goes straight to the URL (one search per typed character, as the brief asks);
   // the URL entry is *replaced* so typing does not flood the history.
   const [input, setInput] = useState(q);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const handleInputChange = (value: string) => {
     setInput(value);
     setQuery(value.trim());
@@ -71,10 +73,19 @@ export function SearchPage() {
         : null,
   );
 
+  // The clicked suggestion disappears with the empty state: hand focus to the search box.
+  const handleSuggestion = (term: string) => {
+    handleInputChange(term);
+    searchInputRef.current?.focus();
+  };
+
   const handlePageSizeChange = (size: (typeof PAGE_SIZES)[number]) => {
     dispatch(pageSizeChanged(size));
     setPageSize(size);
   };
+
+  // What is on screen for the current results, shared by the count line and the results block.
+  const view = getShownResults();
 
   return (
     <>
@@ -86,15 +97,39 @@ export function SearchPage() {
             value={input}
             onChange={handleInputChange}
             onClear={() => handleInputChange('')}
+            inputRef={searchInputRef}
           />
         </div>
         <div className="col-12 col-md-auto">
           <PageSizeSelect value={pageSize} options={PAGE_SIZES} onChange={handlePageSizeChange} />
         </div>
       </div>
+      {/* Always mounted so screen readers announce its text changes (a new node is not announced). */}
+      <p className="result-count text-body-secondary small" role="status" aria-live="polite">
+        {view &&
+          view.books.length > 0 &&
+          `Showing ${view.startIndex + 1}–${view.startIndex + view.books.length} of about ${view.total} results`}
+      </p>
       {renderResults()}
     </>
   );
+
+  function getShownResults() {
+    if (!q || search.isError || !search.data || !search.dataArgs) return null;
+    const { books, totalItems } = search.data;
+    const shown = search.dataArgs;
+    const startIndex = getStartIndex(shown.page, shown.pageSize);
+    const total = applyBounds(
+      getEffectiveTotal({
+        totalItems,
+        startIndex,
+        itemCount: books.length,
+        pageSize: shown.pageSize,
+      }),
+      bounds,
+    );
+    return { books, shown, startIndex, total, totalPages: getTotalPages(total, shown.pageSize) };
+  }
 
   /**
    * "No more results" with one button that lands on a page that has results: the last page
@@ -125,7 +160,11 @@ export function SearchPage() {
   function renderResults() {
     if (!q) {
       return (
-        <StatusMessage icon={SearchIcon} title="Find your next book">
+        <StatusMessage
+          icon={SearchIcon}
+          title="Find your next book"
+          footer={<SuggestedSearches onSelect={handleSuggestion} />}
+        >
           Start typing a title, an author or an ISBN: results appear as you type.
         </StatusMessage>
       );
@@ -147,21 +186,8 @@ export function SearchPage() {
       );
     }
     // Skeleton only for the first load of a query; page changes keep the previous results.
-    if (!search.data || !search.dataArgs) return <BookListSkeleton count={pageSize} />;
-
-    const { books, totalItems } = search.data;
-    const shown = search.dataArgs;
-    const startIndex = getStartIndex(shown.page, shown.pageSize);
-    const total = applyBounds(
-      getEffectiveTotal({
-        totalItems,
-        startIndex,
-        itemCount: books.length,
-        pageSize: shown.pageSize,
-      }),
-      bounds,
-    );
-    const totalPages = getTotalPages(total, shown.pageSize);
+    if (!view) return <BookListSkeleton count={pageSize} />;
+    const { books, shown, totalPages } = view;
 
     if (books.length === 0) {
       // Past the real end (Google's totalItems is only an estimate): let the user step back.
@@ -182,9 +208,6 @@ export function SearchPage() {
 
     return (
       <>
-        <p className="text-secondary small" aria-live="polite">
-          Showing {startIndex + 1}&ndash;{startIndex + books.length} of about {total} results
-        </p>
         <div
           className={search.isFetching ? 'results-fade' : undefined}
           aria-busy={search.isFetching}

@@ -31,3 +31,9 @@ $enable-shadows: false;
 $pagination-active-bg: #c7321d;
 $pagination-active-border-color: #c7321d;
 $pagination-active-color: #fff;
+
+// Dark colour mode (Bootstrap 5.3 `data-bs-theme="dark"`). Bootstrap derives the rest from these.
+$body-bg-dark: #14171f;
+$body-color-dark: #e6e8ee;
+$link-color-dark: #ff8f7e; // light enough for AA on the dark background
+$link-hover-color-dark: #ffb4a8;

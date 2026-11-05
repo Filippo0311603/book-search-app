@@ -1,4 +1,5 @@
-// Small custom rules on top of Bootstrap utilities.
+// Small custom rules on top of Bootstrap utilities. Colours come from Bootstrap's CSS variables
+// (--bs-*) so they follow the light/dark colour mode set by `data-bs-theme` on <html>.
 
 // Description limited to 2 lines, ending with an ellipsis.
 .line-clamp-2 {
@@ -9,44 +10,93 @@
   overflow: hidden;
 }
 
+// Visible keyboard focus on every link (the cards use the overlay rule below instead).
+a:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: $zindex-tooltip;
+  padding: 0.5rem 1rem;
+  border-radius: $border-radius;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+main:focus {
+  outline: none; // focus target of the skip link, not an interactive control
+}
+
 .book-cover {
   width: 80px;
   aspect-ratio: 2 / 3;
   object-fit: cover;
-  background-color: $light;
+  background-color: var(--bs-tertiary-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 
   @include media-breakpoint-up(md) {
     width: 100px;
   }
 
+  // Detail page: the large image is shown whole (no cropping) and as wide as the column allows.
   &--large {
     width: 100%;
     max-width: 280px;
+    aspect-ratio: auto;
+    object-fit: contain;
   }
 }
 
 .book-card {
-  transition: border-color 0.15s ease-in-out;
+  @include transition(
+    border-color 0.15s ease-in-out,
+    transform 0.15s ease-out,
+    box-shadow 0.15s ease-out
+  );
 
   &:hover,
   &:focus-within {
     border-color: $primary;
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--bs-box-shadow);
+    }
   }
 }
 
 .book-title-link {
   color: inherit;
   text-decoration: none;
+  overflow-wrap: anywhere;
 
   // The whole card is clickable through the title link.
   &::after {
     content: '';
     position: absolute;
     inset: 0;
+    border-radius: var(--bs-card-border-radius);
   }
 
   &:hover {
-    color: $link-color;
+    color: var(--bs-link-color);
+  }
+
+  // The focus ring goes around the whole card, not just the title text.
+  &:focus-visible {
+    outline: none;
+
+    &::after {
+      outline: 2px solid var(--bs-primary);
+      outline-offset: 2px;
+    }
   }
 }
 
@@ -57,7 +107,89 @@
 
 .results-fade {
   opacity: 0.6;
-  transition: opacity 0.15s;
+  @include transition(opacity 0.15s);
+}
+
+// Cards fade in when they enter the list (new page, new query); not for users who prefer less motion.
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .book-list-item {
+    animation: fade-in 0.25s ease-out backwards;
+  }
+}
+
+// Collapses while empty (no blank gap above status messages) but stays in the DOM so that
+// screen readers still announce the text when it appears.
+.result-count:empty {
+  margin: 0;
+}
+
+// One focus ring around the whole search control (icon + input + buttons), not just the text field.
+.search-group {
+  border-radius: $input-border-radius-lg;
+
+  &:focus-within {
+    box-shadow: $input-focus-box-shadow;
+
+    > .form-control,
+    > .input-group-text,
+    > .btn {
+      border-color: $input-focus-border-color;
+    }
+  }
+
+  > .form-control:focus {
+    box-shadow: none;
+  }
+}
+
+// The "/" shortcut hint, laid over the right end of the search box (a sibling of the input group).
+.search-hint {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  z-index: 6; // above the focused input (z-index 5 in an input group)
+  transform: translateY(-50%);
+  pointer-events: none;
+  background: var(--bs-body-bg);
+  color: var(--bs-secondary-color);
+  border: 1px solid var(--bs-border-color);
+  box-shadow: none;
+  font-size: 0.8rem;
+}
+
+// First/Last are hidden below sm: Previous/Next become the ends and need the rounded corners.
+@include media-breakpoint-down(sm) {
+  .pagination .page-item:nth-child(2) .page-link {
+    @include border-start-radius(var(--bs-pagination-border-radius));
+  }
+
+  .pagination .page-item:nth-last-child(2) .page-link {
+    @include border-end-radius(var(--bs-pagination-border-radius));
+  }
+}
+
+// Bootstrap keeps the secondary button colours fixed; lighten them on the dark background.
+[data-bs-theme='dark'] .btn-outline-secondary {
+  --bs-btn-color: #b4bac6;
+  --bs-btn-border-color: #5b6372;
+  --bs-btn-hover-color: #14171f;
+  --bs-btn-hover-bg: #b4bac6;
+  --bs-btn-hover-border-color: #b4bac6;
+  --bs-btn-active-color: #14171f;
+  --bs-btn-active-bg: #b4bac6;
+  --bs-btn-active-border-color: #b4bac6;
+  --bs-btn-disabled-color: #b4bac6;
+  --bs-btn-disabled-border-color: #5b6372;
+}
+
+[data-bs-theme='dark'] .book-card {
+  --bs-card-bg: var(--bs-tertiary-bg);
 }
 
 // Bootstrap has no min-w-0 utility; lets flex children shrink so long titles wrap.

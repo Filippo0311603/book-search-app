@@ -10,6 +10,8 @@ interface StatusMessageProps {
   /** Use 1 when the message is the main content of the page. */
   headingLevel?: 1 | 2;
   action?: { label: string; onClick: () => void };
+  /** Extra content below the message (e.g. suggestions). */
+  footer?: ReactNode;
 }
 
 /** Generic centered message used for empty, no-results and error states. */
@@ -20,18 +22,23 @@ export function StatusMessage({
   role = 'status',
   headingLevel = 2,
   action,
+  footer,
 }: StatusMessageProps) {
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
   return (
-    <div className="text-center py-5 px-3" role={role}>
-      <Icon className="display-4 text-secondary" />
-      <Heading className="h4 mt-3">{title}</Heading>
-      {children && <p className="text-secondary mb-3">{children}</p>}
-      {action && (
-        <button type="button" className="btn btn-primary" onClick={action.onClick}>
-          {action.label}
-        </button>
-      )}
-    </div>
+    <>
+      <div className={`text-center pt-5 px-3 ${footer ? 'pb-0' : 'pb-5'}`} role={role}>
+        <Icon className="display-4 text-body-secondary" />
+        <Heading className="h4 mt-3">{title}</Heading>
+        {children && <p className="text-body-secondary mb-3">{children}</p>}
+        {action && (
+          <button type="button" className="btn btn-primary" onClick={action.onClick}>
+            {action.label}
+          </button>
+        )}
+      </div>
+      {/* Outside the status element: it holds buttons, which should not be re-announced. */}
+      {footer && <div className="text-center px-3 pb-5">{footer}</div>}
+    </>
   );
 }

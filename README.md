@@ -8,6 +8,23 @@ A responsive single-page app to search books with the [Google Books API](https:/
 
 Built with **Vite, React 19, TypeScript (strict), Redux Toolkit + RTK Query, React Router 7 and Bootstrap 5 (Sass, custom theme)**.
 
+## Features
+
+- Live search: results update on every keystroke; `/` focuses the search box from anywhere (outside text fields), with a hint inside the box on desktop.
+- Paginated results (page size 5, 10, 15 or 20) with a windowed paginator, and a detail page with a link to Google Books.
+- Empty state with suggested searches (one click fills the box and searches).
+- Light and dark theme (Bootstrap 5.3 colour modes): follows the OS preference, with a navbar toggle whose choice is saved in `localStorage`. A tiny inline script in `index.html` sets the theme before the first paint, so there is no flash of the wrong one.
+- Readable publication dates (`8 Dec 2015`, `Jun 2017`, `2009`), a crisp large cover on the detail page, a hover lift on cards and a fade-in of results (both off with `prefers-reduced-motion`).
+- Responsive from 360 px up: the paginator never wraps or overflows on phones (first/last buttons are hidden below `sm`).
+
+### Accessibility
+
+- Landmarks: skip link, `header` + `nav`, `main`, `footer`, `role="search"`; one `<h1>` per page.
+- The result count ("Showing X–Y of about Z results") lives in an always-mounted `role="status"` / `aria-live="polite"` region, so changes are announced.
+- Visible focus everywhere: one ring around the whole search control, a ring around the whole card when its title link is focused, outlines on links.
+- The theme toggle is a button with a fixed `aria-label` and `aria-pressed`; the paginator has labelled buttons and `aria-current="page"`.
+- Text contrast meets WCAG AA (at least 5:1) in both themes, measured in the browser for body and secondary text, links, the paginator and the active page.
+
 ## Getting started
 
 Requires Node.js >= 20.19 (`engines` in `package.json`; `.nvmrc` pins 22, which nvm and a CodeSandbox Devbox pick up; browser sandboxes run no Node).
@@ -68,19 +85,19 @@ Console messages from CodeSandbox's own runtime files (`compile.ts`, `cache.js`,
 
 ## Requirements mapping
 
-| Requirement                                           | Where                                                                                                                                                                     |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Live search (updates while typing)                    | `SearchPage` (one search per input change) + `useBookSearch`                                                                                                              |
-| Pagination with `startIndex` / `maxResults`           | `services/googleBooksApi.ts`, `features/books/pagination.ts`                                                                                                              |
-| Page count computed from `totalItems`                 | `getEffectiveTotal` / `getTotalPages`                                                                                                                                     |
-| Page size in [5, 10, 15, 20]                          | `PAGE_SIZES` constant, `PageSizeSelect`                                                                                                                                   |
-| Paginator (first/prev/window with ellipsis/next/last) | `components/Paginator.tsx`, `getPageItems`                                                                                                                                |
-| Detail page with `infoLink`                           | `pages/BookDetailPage.tsx` (`target="_blank" rel="noopener noreferrer"`)                                                                                                  |
-| Missing cover placeholder                             | `PLACEHOLDER_COVER_URL` (one constant), used by the mapper and by `<img onError>`                                                                                         |
-| Description clamped to 2 lines                        | `.line-clamp-2` in `styles/_components.scss`, HTML stripped in the mapper                                                                                                 |
-| Loading / error (incl. 429 + retry) / empty / 404     | `BookListSkeleton`, `StatusMessage`, `NotFoundPage`                                                                                                                       |
-| Bootstrap 5 with custom theme colors via Sass         | `styles/_variables.scss` overrides `$primary` etc. before importing Bootstrap                                                                                             |
-| Accessibility                                         | labelled controls, `role="search"`, `aria-current`, `aria-label`s, live regions, focus states, one `<h1>` and a `<title>` per page, AA contrast on the active page button |
+| Requirement                                           | Where                                                                             |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Live search (updates while typing)                    | `SearchPage` (one search per input change) + `useBookSearch`                      |
+| Pagination with `startIndex` / `maxResults`           | `services/googleBooksApi.ts`, `features/books/pagination.ts`                      |
+| Page count computed from `totalItems`                 | `getEffectiveTotal` / `getTotalPages`                                             |
+| Page size in [5, 10, 15, 20]                          | `PAGE_SIZES` constant, `PageSizeSelect`                                           |
+| Paginator (first/prev/window with ellipsis/next/last) | `components/Paginator.tsx`, `getPageItems`                                        |
+| Detail page with `infoLink`                           | `pages/BookDetailPage.tsx` (`target="_blank" rel="noopener noreferrer"`)          |
+| Missing cover placeholder                             | `PLACEHOLDER_COVER_URL` (one constant), used by the mapper and by `<img onError>` |
+| Description clamped to 2 lines                        | `.line-clamp-2` in `styles/_components.scss`, HTML stripped in the mapper         |
+| Loading / error (incl. 429 + retry) / empty / 404     | `BookListSkeleton`, `StatusMessage`, `NotFoundPage`                               |
+| Bootstrap 5 with custom theme colors via Sass         | `styles/_variables.scss` overrides `$primary` etc. before importing Bootstrap     |
+| Accessibility                                         | see [Accessibility](#accessibility)                                               |
 
 ## Technical choices
 
@@ -122,7 +139,7 @@ src/
   app/                 store (factory), typed hooks, route table, App
   services/            googleBooksApi.ts: RTK Query API (base query, retry policy, endpoints)
   features/books/
-    components/        BookCard, BookList, BookCover, BookListSkeleton, BookBackLink
+    components/        BookCard, BookList, BookCover, BookListSkeleton, BookBackLink, SuggestedSearches
     hooks/             useBookSearch, useResultBounds, useSearchState
     constants.ts       placeholder URL, page sizes
     types.ts           API types (Volume, VolumeInfo, VolumesResponse) and domain Book
@@ -131,7 +148,9 @@ src/
     searchParams.ts    URL query string parsing/validation
     errors.ts          error classification and messages
     preferencesSlice.ts
-  components/          Layout, SearchBar, PageSizeSelect, Paginator, StatusMessage, icons (inline SVG)
+  features/theme/      theme.ts (pure helpers, storage in try/catch), useTheme
+  hooks/               useFocusShortcut (the "/" key)
+  components/          Layout, SearchBar, ThemeToggle, PageSizeSelect, Paginator, StatusMessage, icons (inline SVG)
   pages/               SearchPage, BookDetailPage, NotFoundPage
   styles/              _variables.scss (theme), _components.scss, main.scss (source), main.css (generated, committed)
   test/                MSW server, fixtures, render helper, setup
@@ -139,6 +158,6 @@ src/
 
 ## Testing
 
-Unit tests cover the mapper (placeholder, http to https, HTML stripping), pagination math and URL parsing. Integration tests render the real routes against a mocked network (MSW): every typed character triggers a request and only the last results are shown, page size changes, paginator navigation sends the right `startIndex`, 429 error and retry, no results, past-the-end pages, back navigation from the detail page, the detail page `infoLink`, 404 routes.
+Unit tests cover the mapper (placeholder, http to https, HTML stripping), pagination math, URL parsing and the date formatter. UI tests cover the theme toggle (OS default, persistence, blocked storage), the `/` shortcut, suggested searches and the live region. Integration tests render the real routes against a mocked network (MSW): every typed character triggers a request and only the last results are shown, page size changes, paginator navigation sends the right `startIndex`, 429 error and retry, no results, past-the-end pages, back navigation from the detail page, the detail page `infoLink`, 404 routes.
 
 The app is rendered inside `<StrictMode>` in tests, like in `main.tsx`. Network behaviour is covered explicitly: one request per character with every obsolete one aborted, out-of-order responses, real request cancellation (the MSW handler observes `request.signal` abort), no abort on StrictMode re-runs, cache hits when returning to a visited page, and previous results kept while a page loads. jsdom ships its own `AbortSignal`, which Node's `fetch` rejects, so tests run in a tiny custom environment (`src/test/jsdom-node-abort.ts`) that is jsdom plus Node's native `AbortController`/`AbortSignal`.

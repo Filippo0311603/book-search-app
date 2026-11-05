@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router';
+import { formatPublishedDate } from '../format';
 import type { Book } from '../types';
 import { BookCover } from './BookCover';
 
@@ -25,9 +26,9 @@ export function BookCard({ book }: { book: Book }) {
               {book.title}
             </Link>
           </h2>
-          <p className="mb-1 text-secondary small">
+          <p className="mb-1 text-body-secondary small">
             {book.authors.length > 0 ? book.authors.join(', ') : 'Unknown author'}
-            {book.publishedDate && <span> &middot; {book.publishedDate}</span>}
+            {book.publishedDate && <span> &middot; {formatPublishedDate(book.publishedDate)}</span>}
           </p>
           {book.description && <p className="card-text line-clamp-2 mb-0">{book.description}</p>}
         </div>

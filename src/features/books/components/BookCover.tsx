@@ -19,6 +19,7 @@ export function BookCover({ src, title, large = false }: BookCoverProps) {
       alt={`Cover of ${title}`}
       className={`book-cover rounded${large ? ' book-cover--large' : ''}`}
       loading={large ? 'eager' : 'lazy'}
+      decoding="async"
       onError={handleError}
     />
   );

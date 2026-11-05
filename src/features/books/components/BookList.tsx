@@ -6,7 +6,7 @@ export function BookList({ books }: { books: Book[] }) {
   return (
     <ul className="list-unstyled row g-3 mb-0">
       {books.map((book) => (
-        <li key={book.id} className="col-12 col-lg-6">
+        <li key={book.id} className="col-12 col-lg-6 book-list-item">
           <BookCard book={book} />
         </li>
       ))}

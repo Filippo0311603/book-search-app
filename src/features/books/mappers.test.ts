@@ -22,6 +22,17 @@ describe('mapVolume', () => {
     expect(book.coverLarge).toBe(PLACEHOLDER_COVER_URL);
   });
 
+  it('prefers the smaller large covers and keeps extraLarge as the last resort', () => {
+    const covers = (imageLinks: object) => mapVolume(makeVolume('a', { imageLinks })).coverLarge;
+    expect(covers({ extraLarge: 'x/xl', large: 'x/l', medium: 'x/m', thumbnail: 'x/t' })).toBe(
+      'x/l',
+    );
+    expect(covers({ extraLarge: 'x/xl', medium: 'x/m', small: 'x/s' })).toBe('x/m');
+    expect(covers({ extraLarge: 'x/xl', small: 'x/s' })).toBe('x/s');
+    expect(covers({ extraLarge: 'x/xl', thumbnail: 'x/t' })).toBe('x/t');
+    expect(covers({ extraLarge: 'x/xl' })).toBe('x/xl');
+  });
+
   it('strips HTML from the plain description and sanitizes the rich one', () => {
     const book = mapVolume(
       makeVolume('a', {
