@@ -10,7 +10,7 @@ export function SuggestedSearches({ onSelect }: { onSelect: (term: string) => vo
           <button
             key={term}
             type="button"
-            className="btn btn-outline-secondary btn-sm rounded-pill"
+            className="btn btn-sm rounded-pill chip"
             onClick={() => onSelect(term)}
           >
             {term}

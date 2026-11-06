@@ -2,10 +2,10 @@ import { useRef, useState } from 'react';
 import { useNavigationType } from 'react-router';
 import { useAppDispatch } from '../app/hooks';
 import {
+  BookHalfIcon,
   EmojiFrownIcon,
   ExclamationTriangleIcon,
   HourglassSplitIcon,
-  SearchIcon,
   SignpostSplitIcon,
 } from '../components/icons';
 import { PageSizeSelect } from '../components/PageSizeSelect';
@@ -91,17 +91,30 @@ export function SearchPage() {
     <>
       <title>{q ? `${q} - BookSearch` : 'BookSearch'}</title>
       <h1 className="visually-hidden">Search books</h1>
-      <div className="row g-3 align-items-center mb-4">
-        <div className="col-12 col-md">
-          <SearchBar
-            value={input}
-            onChange={handleInputChange}
-            onClear={() => handleInputChange('')}
-            inputRef={searchInputRef}
-          />
-        </div>
-        <div className="col-12 col-md-auto">
-          <PageSizeSelect value={pageSize} options={PAGE_SIZES} onChange={handlePageSizeChange} />
+      <div className={q ? undefined : 'hero'}>
+        {!q && (
+          <div className="text-center mb-4">
+            <span className="hero-mark mb-3" aria-hidden="true">
+              <BookHalfIcon />
+            </span>
+            <h2 className="hero-title">Find your next great read</h2>
+            <p className="hero-lead lead text-body-secondary mb-0">
+              Start typing a title, an author or an ISBN: results appear as you type.
+            </p>
+          </div>
+        )}
+        <div className="row g-3 align-items-center mb-4">
+          <div className="col-12 col-md">
+            <SearchBar
+              value={input}
+              onChange={handleInputChange}
+              onClear={() => handleInputChange('')}
+              inputRef={searchInputRef}
+            />
+          </div>
+          <div className="col-12 col-md-auto">
+            <PageSizeSelect value={pageSize} options={PAGE_SIZES} onChange={handlePageSizeChange} />
+          </div>
         </div>
       </div>
       {/* Always mounted so screen readers announce its text changes (a new node is not announced). */}
@@ -160,13 +173,9 @@ export function SearchPage() {
   function renderResults() {
     if (!q) {
       return (
-        <StatusMessage
-          icon={SearchIcon}
-          title="Find your next book"
-          footer={<SuggestedSearches onSelect={handleSuggestion} />}
-        >
-          Start typing a title, an author or an ISBN: results appear as you type.
-        </StatusMessage>
+        <div className="text-center px-3 pb-5">
+          <SuggestedSearches onSelect={handleSuggestion} />
+        </div>
       );
     }
     if (isRejectedDeepPage) {

@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { useLocation, useParams } from 'react-router';
 import { BoxArrowUpRightIcon, ExclamationTriangleIcon } from '../components/icons';
 import { StatusMessage } from '../components/StatusMessage';
@@ -55,44 +56,55 @@ export function BookDetailPage() {
     <article>
       <title>{`${book.title} - BookSearch`}</title>
       <BookBackLink search={from} cameFromResults={cameFromResults} />
-      <div className="row g-4">
-        <div className="col-12 col-md-4 col-lg-3 text-center text-md-start">
-          <BookCover src={book.coverLarge} title={book.title} large />
-        </div>
-        <div className="col-12 col-md-8 col-lg-9">
-          <h1 className="h2 mb-1">{book.title}</h1>
-          {book.subtitle && <p className="lead text-body-secondary">{book.subtitle}</p>}
-          <dl className="row mb-4">
-            {details.map(
-              ([label, value]) =>
-                value && (
-                  <div key={label} className="col-12 col-sm-6 mb-2">
-                    <dt className="small text-body-secondary fw-normal">{label}</dt>
-                    <dd className="mb-0">{value}</dd>
-                  </div>
-                ),
+      {/* Blurred, darkened copy of the cover as backdrop (see _detail.scss). */}
+      <div
+        className="book-hero"
+        style={{ '--cover': `url(${JSON.stringify(book.coverLarge)})` } as CSSProperties}
+      >
+        <div className="row g-4 align-items-center">
+          <div className="col-12 col-md-4 col-lg-3 text-center text-md-start">
+            <BookCover src={book.coverLarge} title={book.title} large />
+          </div>
+          <div className="col-12 col-md-8 col-lg-9">
+            <h1 className="book-hero-title mb-2">{book.title}</h1>
+            {book.subtitle && <p className="lead">{book.subtitle}</p>}
+            {book.authors.length > 0 && (
+              <p className="book-hero-authors mb-4">by {book.authors.join(', ')}</p>
             )}
-          </dl>
-          {book.descriptionHtml && (
-            <section aria-labelledby="description-title" className="mb-4">
-              <h2 id="description-title" className="h5">
-                Description
-              </h2>
-              {/* Sanitized in the mapper (DOMPurify, formatting tags only). */}
-              <div dangerouslySetInnerHTML={{ __html: book.descriptionHtml }} />
-            </section>
-          )}
-          {book.infoLink && (
-            <a
-              href={book.infoLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary btn-lg"
-            >
-              View on Google Books <BoxArrowUpRightIcon className="ms-1" />
-            </a>
-          )}
+            {book.infoLink && (
+              <a
+                href={book.infoLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary btn-lg"
+              >
+                View on Google Books <BoxArrowUpRightIcon className="ms-1" />
+              </a>
+            )}
+          </div>
         </div>
+      </div>
+      <div>
+        <dl className="meta-grid">
+          {details.map(
+            ([label, value]) =>
+              value && (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ),
+          )}
+        </dl>
+        {book.descriptionHtml && (
+          <section aria-labelledby="description-title" className="mb-4">
+            <h2 id="description-title" className="h5">
+              Description
+            </h2>
+            {/* Sanitized in the mapper (DOMPurify, formatting tags only). */}
+            <div dangerouslySetInnerHTML={{ __html: book.descriptionHtml }} />
+          </section>
+        )}
       </div>
     </article>
   );

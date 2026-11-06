@@ -76,7 +76,7 @@ describe('network management', () => {
     await userEvent.type(searchbox(), '   ');
     await sleep(100);
     expect(requested).toEqual([]);
-    expect(screen.getByText('Find your next book')).toBeInTheDocument();
+    expect(screen.getByText('Find your next great read')).toBeInTheDocument();
   });
 
   it('does not abort anything when StrictMode re-runs effects for the same args', async () => {
@@ -287,7 +287,7 @@ describe('search input', () => {
     expect(searchbox()).toHaveValue('');
     expect(searchbox()).toHaveFocus();
     await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/));
-    expect(screen.getByText('Find your next book')).toBeInTheDocument();
+    expect(screen.getByText('Find your next great read')).toBeInTheDocument();
   });
 
   it('keeps every typed character, even when typing is faster than the URL updates', async () => {

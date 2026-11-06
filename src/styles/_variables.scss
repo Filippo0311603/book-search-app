@@ -7,33 +7,35 @@ $success: #1f9d63;
 $info: #2b7bb9;
 $warning: #f2a516;
 $danger: #c0261b;
-$light: #f6f4f2;
-$dark: #1f2430;
+$light: #f7f1e6;
+$dark: #151a2c; // navbar: deep ink
 
-$body-bg: #fbfaf9;
-$body-color: #1f2430;
-$link-color: #c7321d; // darker than the brand color to reach AA contrast on white
-$link-hover-color: #9f2414;
-$font-family-sans-serif:
-  system-ui,
-  -apple-system,
-  'Segoe UI',
-  Roboto,
-  'Helvetica Neue',
-  Arial,
-  sans-serif;
+// Editorial palette. Light: warm paper + ink. Dark: deep navy + warm off-white.
+$body-bg: #f7f1e6;
+$body-color: #1d1a16;
+$body-secondary-bg: #ece3d0;
+$body-tertiary-bg: #fffdf8; // lightest paper: cards, inputs, chips (dark mode: navy, below)
+$border-color: #ded3bc;
+$card-bg: var(--bs-tertiary-bg);
+$link-color: #b32b17; // darker than the brand color to reach AA on the paper background
+$link-hover-color: #8f2111;
+$headings-font-family: 'Fraunces', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+$headings-font-weight: 600;
 $border-radius: 0.5rem;
 $focus-ring-width: 0.25rem;
 $focus-ring-opacity: 0.35;
 $enable-shadows: false;
 
 // White on the brand orange is only ~3.3:1, so the active page uses a darker shade (>= 4.5:1).
-$pagination-active-bg: #c7321d;
-$pagination-active-border-color: #c7321d;
+$pagination-active-bg: #b32b17;
+$pagination-active-border-color: #b32b17;
 $pagination-active-color: #fff;
 
 // Dark colour mode (Bootstrap 5.3 `data-bs-theme="dark"`). Bootstrap derives the rest from these.
-$body-bg-dark: #14171f;
-$body-color-dark: #e6e8ee;
+$body-bg-dark: #0f1424;
+$body-color-dark: #efe8da;
+$body-secondary-bg-dark: #1b2339;
+$body-tertiary-bg-dark: #161d31;
+$border-color-dark: #2c3552;
 $link-color-dark: #ff8f7e; // light enough for AA on the dark background
 $link-hover-color-dark: #ffb4a8;

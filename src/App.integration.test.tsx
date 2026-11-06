@@ -24,7 +24,7 @@ describe('search page', () => {
   it('shows the initial empty state and sends no request without a query', async () => {
     const calls = recordSearches();
     renderApp('/');
-    expect(screen.getByText('Find your next book')).toBeInTheDocument();
+    expect(screen.getByText('Find your next great read')).toBeInTheDocument();
     await userEvent.type(screen.getByRole('searchbox', { name: /search books/i }), '   ');
     await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
     expect(calls).toHaveLength(0);
@@ -139,7 +139,7 @@ describe('navigation', () => {
     await userEvent.click(screen.getByRole('link', { name: 'BookSearch' }));
 
     expect(screen.getByRole('searchbox')).toHaveValue('');
-    expect(screen.getByText('Find your next book')).toBeInTheDocument();
+    expect(screen.getByText('Find your next great read')).toBeInTheDocument();
     expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/);
   });
 });

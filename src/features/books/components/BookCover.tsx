@@ -14,13 +14,16 @@ export function BookCover({ src, title, large = false }: BookCoverProps) {
   };
 
   return (
-    <img
-      src={src}
-      alt={`Cover of ${title}`}
-      className={`book-cover rounded${large ? ' book-cover--large' : ''}`}
-      loading={large ? 'eager' : 'lazy'}
-      decoding="async"
-      onError={handleError}
-    />
+    // The frame draws the book look (rounded right edge, spine highlight, shadow) in CSS.
+    <span className={`book-cover-frame${large ? ' book-cover-frame--large' : ''}`}>
+      <img
+        src={src}
+        alt={`Cover of ${title}`}
+        className="book-cover"
+        loading={large ? 'eager' : 'lazy'}
+        decoding="async"
+        onError={handleError}
+      />
+    </span>
   );
 }

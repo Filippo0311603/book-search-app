@@ -1,0 +1,58 @@
+// Home / empty state: headline, prominent search bar, suggested searches as chips.
+.hero {
+  position: relative;
+  margin-bottom: 1.5rem;
+  padding: 2.5rem 1rem 1rem;
+  border-radius: 1.5rem;
+  // CSS-only decoration: two soft colour washes, no image.
+  background:
+    radial-gradient(60% 80% at 15% 0%, rgba($brand, 0.14), transparent 70%),
+    radial-gradient(50% 70% at 95% 10%, rgba(43, 123, 185, 0.12), transparent 70%);
+
+  @include media-breakpoint-up(md) {
+    padding: 3.5rem 2rem 1.5rem;
+  }
+
+  .search-group:not(:focus-within) {
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+  }
+}
+
+.hero-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  background: var(--bs-body-color);
+  color: var(--bs-body-bg);
+}
+
+.hero-title {
+  font-size: calc(1.9rem + 2vw);
+  line-height: 1.1;
+
+  @include media-breakpoint-up(lg) {
+    font-size: 3.5rem;
+  }
+}
+
+.hero-lead {
+  max-width: 34rem;
+  margin-inline: auto;
+}
+
+.chip {
+  --bs-btn-color: var(--bs-body-color);
+  --bs-btn-bg: var(--bs-tertiary-bg);
+  --bs-btn-border-color: var(--bs-border-color);
+  --bs-btn-hover-color: var(--bs-body-color);
+  --bs-btn-hover-bg: var(--bs-secondary-bg);
+  --bs-btn-hover-border-color: var(--bs-primary);
+  --bs-btn-active-color: var(--bs-body-color);
+  --bs-btn-active-bg: var(--bs-secondary-bg);
+  --bs-btn-active-border-color: var(--bs-primary);
+  padding-inline: 0.9rem;
+}

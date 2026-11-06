@@ -19,9 +19,15 @@ export function Layout() {
       <header>
         <nav className="navbar navbar-dark bg-dark" aria-label="Main">
           <div className="container">
-            <Link to="/" className="navbar-brand d-flex align-items-center gap-2">
+            <Link
+              to="/"
+              aria-label="BookSearch"
+              className="navbar-brand brand-wordmark d-flex align-items-center gap-2"
+            >
               <BookHalfIcon className="text-primary" />
-              BookSearch
+              <span>
+                Book<span className="brand-accent">Search</span>
+              </span>
             </Link>
             <ThemeToggle />
           </div>

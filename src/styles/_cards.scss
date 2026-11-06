@@ -1,0 +1,161 @@
+// Book cover (list + detail), result cards and loading skeletons.
+
+// The frame carries the "real book" look; the <img> inside only fills it.
+.book-cover-frame {
+  position: relative;
+  flex: none;
+  width: 80px;
+  line-height: 0;
+  border-radius: 2px 6px 6px 2px;
+  transform-origin: left center;
+  // Soft layered shadow: contact shadow + two ambient ones.
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.18),
+    0 12px 24px rgba(0, 0, 0, 0.14);
+  @include transition(transform 0.25s ease-out, box-shadow 0.25s ease-out);
+
+  @include media-breakpoint-up(md) {
+    width: 100px;
+  }
+
+  // Spine highlight and page-edge shade, drawn over the image.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.4) 0,
+        rgba(0, 0, 0, 0.22) 3%,
+        rgba(255, 255, 255, 0.14) 6%,
+        transparent 14%
+      ),
+      linear-gradient(270deg, rgba(0, 0, 0, 0.12), transparent 8%);
+  }
+
+  // Detail page: as wide as the column allows.
+  &--large {
+    width: 100%;
+    max-width: 240px;
+
+    @include media-breakpoint-up(md) {
+      width: 100%;
+    }
+  }
+}
+
+.book-cover {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: inherit;
+  background-color: var(--bs-tertiary-bg);
+
+  // The large image is shown whole (no cropping).
+  .book-cover-frame--large > & {
+    aspect-ratio: auto;
+    object-fit: contain;
+  }
+}
+
+.book-card {
+  --bs-card-border-radius: 0.75rem;
+  @include transition(
+    border-color 0.15s ease-in-out,
+    transform 0.2s ease-out,
+    box-shadow 0.2s ease-out
+  );
+
+  &:hover,
+  &:focus-within {
+    border-color: $primary;
+  }
+
+  .card-title {
+    font-size: 1.15rem;
+    line-height: 1.25;
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.12);
+    }
+
+    // The cover tilts open slightly, like a book pulled off the shelf.
+    &:hover .book-cover-frame {
+      transform: perspective(500px) rotateY(-14deg);
+      box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        0 8px 14px rgba(0, 0, 0, 0.22),
+        0 18px 30px rgba(0, 0, 0, 0.16);
+    }
+  }
+}
+
+.book-title-link {
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+
+  // The whole card is clickable through the title link.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--bs-card-border-radius);
+  }
+
+  &:hover {
+    color: var(--bs-link-color);
+  }
+
+  // The focus ring goes around the whole card, not just the title text.
+  &:focus-visible {
+    outline: none;
+
+    &::after {
+      outline: 2px solid var(--bs-primary);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.skeleton-cover {
+  width: 80px;
+  aspect-ratio: 2 / 3;
+}
+
+// Loading skeletons: a static tinted bar, with a shimmer sweep unless motion is reduced.
+.placeholder-glow .placeholder {
+  opacity: 1;
+  animation: none;
+  background-color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    rgba(var(--bs-body-color-rgb), 0.1) 30%,
+    rgba(var(--bs-body-color-rgb), 0.2) 50%,
+    rgba(var(--bs-body-color-rgb), 0.1) 70%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .placeholder-glow .placeholder {
+    animation: shimmer 1.4s linear infinite;
+  }
+}

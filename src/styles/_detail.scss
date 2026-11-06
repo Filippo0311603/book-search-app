@@ -1,0 +1,73 @@
+// Detail page: banner with a blurred, darkened copy of the cover behind the real cover.
+.book-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  // Light-on-dark in both colour modes: the backdrop is darkened by the overlay below.
+  color: #fff;
+  background-color: #151a2c;
+
+  @include media-breakpoint-up(md) {
+    padding: 2.5rem;
+  }
+
+  // --cover is set inline from the cover URL.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -2rem;
+    z-index: -2;
+    background: var(--cover) center / cover no-repeat;
+    filter: blur(24px) brightness(0.6) saturate(1.2);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(15, 20, 36, 0.45), rgba(15, 20, 36, 0.75));
+  }
+
+  .lead,
+  .book-hero-authors {
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .book-hero-title {
+    font-size: calc(1.6rem + 1.2vw);
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+}
+
+// Metadata: a grid of small tiles (label above value).
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+
+  > div {
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: $border-radius;
+    background: var(--bs-tertiary-bg);
+  }
+
+  dt {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 500;
+  }
+}
