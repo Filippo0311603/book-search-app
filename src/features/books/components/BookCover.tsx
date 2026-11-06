@@ -14,16 +14,21 @@ export function BookCover({ src, title, large = false }: BookCoverProps) {
   };
 
   return (
-    // The frame draws the book look (rounded right edge, spine highlight, shadow) in CSS.
+    // The frame keeps the layout box and sets the perspective; .book-cover-book is the 3D object.
+    // The two empty spans are decorative (back cover, page edges), drawn entirely in CSS.
     <span className={`book-cover-frame${large ? ' book-cover-frame--large' : ''}`}>
-      <img
-        src={src}
-        alt={`Cover of ${title}`}
-        className="book-cover"
-        loading={large ? 'eager' : 'lazy'}
-        decoding="async"
-        onError={handleError}
-      />
+      <span className="book-cover-book">
+        <span className="book-cover-back" aria-hidden="true" />
+        <span className="book-cover-pages" aria-hidden="true" />
+        <img
+          src={src}
+          alt={`Cover of ${title}`}
+          className="book-cover"
+          loading={large ? 'eager' : 'lazy'}
+          decoding="async"
+          onError={handleError}
+        />
+      </span>
     </span>
   );
 }

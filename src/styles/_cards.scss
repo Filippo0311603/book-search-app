@@ -1,31 +1,53 @@
 // Book cover (list + detail), result cards and loading skeletons.
 
-// The frame carries the "real book" look; the <img> inside only fills it.
+// A real 3D book: the frame only keeps the layout box and sets the perspective;
+// .book-cover-book is the object that rotates (spine on the left), made of the front
+// cover (the <img>), a back cover and the cream page edges on the right.
 .book-cover-frame {
+  --depth: 12px;
+  --tilt: -16deg;
   position: relative;
+  display: block;
   flex: none;
   width: 80px;
   line-height: 0;
-  border-radius: 2px 6px 6px 2px;
-  transform-origin: left center;
-  // Soft layered shadow: contact shadow + two ambient ones.
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 4px 8px rgba(0, 0, 0, 0.18),
-    0 12px 24px rgba(0, 0, 0, 0.14);
-  @include transition(transform 0.25s ease-out, box-shadow 0.25s ease-out);
+  perspective: 600px;
 
   @include media-breakpoint-up(md) {
     width: 100px;
+    --depth: 14px;
   }
 
-  // Spine highlight and page-edge shade, drawn over the image.
+  // Detail page: as wide as the column allows, a stronger angle.
+  &--large {
+    --depth: 22px;
+    --tilt: -22deg;
+    width: 100%;
+    max-width: 240px;
+    perspective: 900px;
+
+    @include media-breakpoint-up(md) {
+      width: 100%;
+    }
+  }
+}
+
+.book-cover-book {
+  position: relative;
+  display: block;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  transform: rotateY(var(--tilt));
+  border-radius: 2px 6px 6px 2px;
+
+  // Sheen: spine crease and a light edge, a hair in front of the cover (no z-fighting).
   &::after {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
+    transform: translateZ(1px);
     background:
       linear-gradient(
         90deg,
@@ -36,27 +58,51 @@
       ),
       linear-gradient(270deg, rgba(0, 0, 0, 0.12), transparent 8%);
   }
+}
 
-  // Detail page: as wide as the column allows.
-  &--large {
-    width: 100%;
-    max-width: 240px;
+// Back cover and spine shadow: dark, one depth behind the front.
+.book-cover-back {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #2b2119;
+  transform: translateZ(calc(var(--depth) * -1));
+}
 
-    @include media-breakpoint-up(md) {
-      width: 100%;
-    }
-  }
+// Page edges: a plane on the right side, rotated 90deg, with fine cream stripes.
+.book-cover-pages {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: calc(100% - var(--depth) / 2);
+  width: var(--depth);
+  transform: translateZ(calc(var(--depth) / -2)) rotateY(90deg);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.18),
+      transparent 12%,
+      transparent 88%,
+      rgba(0, 0, 0, 0.22)
+    ),
+    repeating-linear-gradient(90deg, #f7f0df 0, #f7f0df 1px, #d9ccb0 1px, #d9ccb0 2px);
 }
 
 .book-cover {
+  display: block;
   width: 100%;
   aspect-ratio: 2 / 3;
   object-fit: cover;
   border-radius: inherit;
   background-color: var(--bs-tertiary-bg);
+  // Soft layered shadow: contact shadow + two ambient ones.
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.18),
+    0 12px 24px rgba(0, 0, 0, 0.14);
 
   // The large image is shown whole (no cropping).
-  .book-cover-frame--large > & {
+  .book-cover-frame--large & {
     aspect-ratio: auto;
     object-fit: contain;
   }
@@ -80,19 +126,44 @@
     line-height: 1.25;
   }
 
+  // The static, gentle angle is the default and the reduced-motion look. Motion only here.
+  @media (prefers-reduced-motion: no-preference) {
+    .book-cover-book,
+    .book-cover {
+      transition:
+        transform 0.35s ease-out,
+        box-shadow 0.35s ease-out;
+    }
+
+    // Keyboard focus pulls the book out as well.
+    &:focus-within .book-cover-frame {
+      --tilt: -28deg;
+    }
+
+    &:focus-within .book-cover {
+      box-shadow:
+        6px 2px 4px rgba(0, 0, 0, 0.3),
+        14px 8px 14px rgba(0, 0, 0, 0.22),
+        24px 18px 30px rgba(0, 0, 0, 0.16);
+    }
+  }
+
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     &:hover {
       transform: translateY(-3px);
       box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.12);
     }
 
-    // The cover tilts open slightly, like a book pulled off the shelf.
+    // The book rotates further, like pulled off the shelf; its shadow moves with it.
     &:hover .book-cover-frame {
-      transform: perspective(500px) rotateY(-14deg);
+      --tilt: -28deg;
+    }
+
+    &:hover .book-cover {
       box-shadow:
-        0 2px 4px rgba(0, 0, 0, 0.3),
-        0 8px 14px rgba(0, 0, 0, 0.22),
-        0 18px 30px rgba(0, 0, 0, 0.16);
+        6px 2px 4px rgba(0, 0, 0, 0.3),
+        14px 8px 14px rgba(0, 0, 0, 0.22),
+        24px 18px 30px rgba(0, 0, 0, 0.16);
     }
   }
 }
