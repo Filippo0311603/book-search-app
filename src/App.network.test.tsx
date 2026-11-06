@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { makeResponse, makeVolume } from './test/fixtures';
 import { renderApp } from './test/renderApp';
 import { server, VOLUMES_URL } from './test/server';
@@ -363,5 +363,84 @@ describe('page metadata and navigation', () => {
     renderApp('/books/abc');
     await screen.findByRole('heading', { level: 1, name: 'Book abc' });
     expect(screen.getByRole('link', { name: /back to results/i })).toHaveAttribute('href', '/');
+  });
+});
+
+describe('retry policy', () => {
+  let randomSpy: MockInstance<typeof Math.random>;
+
+  beforeEach(() => {
+    // RTK backoff is ~~((Math.random() + 0.4) * (300 << attempt)): with 0 it is exactly
+    // 240 ms before the first retry and 480 ms before the second.
+    randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+  });
+
+  afterEach(() => {
+    randomSpy.mockRestore();
+  });
+
+  /** Answers with `plan[n]` on the n-th request (the last entry repeats) and counts requests. */
+  function usePlan(plan: Array<'ok' | number | 'network'>) {
+    const state = { calls: 0 };
+    server.use(
+      http.get(VOLUMES_URL, () => {
+        const step = plan[Math.min(state.calls, plan.length - 1)];
+        state.calls += 1;
+        if (step === 'ok') return HttpResponse.json(makeResponse(5));
+        if (step === 'network') return HttpResponse.error();
+        return HttpResponse.json({ error: {} }, { status: step });
+      }),
+    );
+    return state;
+  }
+
+  it('retries a 5xx and succeeds when a later attempt returns 200', async () => {
+    const state = usePlan([503, 'ok']);
+    renderApp('/?q=dune&pageSize=5');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Book id1' }, { timeout: 4000 }),
+    ).toBeInTheDocument();
+    expect(state.calls).toBe(2);
+  });
+
+  it('gives up after the initial attempt plus 2 retries and shows the error', async () => {
+    const state = usePlan([503]);
+    renderApp('/?q=dune&pageSize=5');
+
+    expect(await screen.findByRole('alert', {}, { timeout: 3000 })).toHaveTextContent(
+      /temporarily unavailable/i,
+    );
+    expect(state.calls).toBe(3);
+  }, 10_000);
+
+  it('retries a network error', async () => {
+    const state = usePlan(['network', 'ok']);
+    renderApp('/?q=dune&pageSize=5');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Book id1' }, { timeout: 4000 }),
+    ).toBeInTheDocument();
+    expect(state.calls).toBe(2);
+  });
+
+  it.each([400, 404, 429])('never retries a %i: exactly one request', async (status) => {
+    const state = usePlan([status]);
+    renderApp('/?q=dune&pageSize=5');
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    await sleep(500); // longer than the first backoff delay (240 ms)
+    expect(state.calls).toBe(1);
+  });
+
+  it('never retries an aborted (obsolete) request', async () => {
+    const { requested, aborted } = useEchoHandler({ d: 5000 });
+    renderApp('/');
+
+    await userEvent.type(searchbox(), 'du');
+    expect(await screen.findByRole('heading', { name: 'Result du' })).toBeInTheDocument();
+    await sleep(500); // a retry of "d" would have fired by now (240 ms)
+    expect(requested).toEqual(['d', 'du']);
+    expect(aborted).toEqual(['d']);
   });
 });

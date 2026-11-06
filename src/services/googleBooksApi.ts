@@ -14,6 +14,8 @@ import type {
 export const GOOGLE_BOOKS_BASE_URL = 'https://www.googleapis.com/books/v1';
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_RETRIES = 2;
+/** How long unused cache entries (searches and book details) are kept. */
+const CACHE_SECONDS = 300;
 
 /**
  * Optional: raises the anonymous quota. Appended as `key=` only when defined.
@@ -60,11 +62,12 @@ export const googleBooksApi = createApi({
         },
       }),
       transformResponse: (response: VolumesResponse) => mapVolumesResponse(response),
-      keepUnusedDataFor: 300,
+      keepUnusedDataFor: CACHE_SECONDS,
     }),
     getBook: builder.query<Book, string>({
       query: (id) => ({ url: `/volumes/${encodeURIComponent(id)}`, params: { key: apiKey } }),
       transformResponse: (response: Volume) => mapVolume(response),
+      keepUnusedDataFor: CACHE_SECONDS,
     }),
   }),
 });
