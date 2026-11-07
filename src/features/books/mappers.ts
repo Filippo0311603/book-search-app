@@ -7,6 +7,20 @@ export function normalizeImageUrl(url: string): string {
   return url.replace(/^http:\/\//i, 'https://').replace(/&edge=curl/i, '');
 }
 
+/**
+ * The volume endpoint (/volumes/{id}) can return a Play Store infoLink even for volumes that are
+ * not sold on Play, and that page is a 404. For those we use the volume's Google Books page
+ * (previewLink): the same URL the search endpoint returns as infoLink for that volume.
+ */
+export function getInfoLink(volume: Volume): string | undefined {
+  const { infoLink, previewLink } = volume.volumeInfo ?? {};
+  const isMissingPlayPage =
+    volume.saleInfo?.saleability === 'NOT_FOR_SALE' &&
+    /^https?:\/\/play\.google\.com\//i.test(infoLink ?? '');
+  if (isMissingPlayPage && previewLink) return previewLink.replace(/^http:\/\//i, 'https://');
+  return infoLink;
+}
+
 export function mapVolume(volume: Volume): Book {
   const info = volume.volumeInfo ?? {};
   const rawThumbnail = info.imageLinks?.thumbnail ?? info.imageLinks?.smallThumbnail;
@@ -29,7 +43,7 @@ export function mapVolume(volume: Volume): Book {
     pageCount: info.pageCount,
     categories: info.categories ?? [],
     language: info.language,
-    infoLink: info.infoLink,
+    infoLink: getInfoLink(volume),
   };
 }
 

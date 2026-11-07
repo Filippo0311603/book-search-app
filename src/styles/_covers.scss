@@ -103,9 +103,9 @@
     0 4px 8px rgba(0, 0, 0, 0.18),
     0 12px 24px rgba(0, 0, 0, 0.14);
 
-  // The large image is shown whole (no cropping).
+  // The large image is shown whole (no cropping), inside the same 2:3 book: the image's own
+  // shape never resizes the 3D book (odd shapes are replaced by BookCover, see covers.ts).
   .book-cover-frame--large & {
-    aspect-ratio: auto;
     object-fit: contain;
   }
 }

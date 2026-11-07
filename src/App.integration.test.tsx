@@ -1,8 +1,8 @@
-import { act, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
-import { makeResponse } from './test/fixtures';
+import { makeResponse, makeVolume } from './test/fixtures';
 import { renderApp } from './test/renderApp';
 import { server, VOLUMES_URL } from './test/server';
 
@@ -156,6 +156,42 @@ describe('book detail page', () => {
       'src',
       'https://books.google.com/cover/abc.jpg',
     );
+  });
+
+  it('links to the Google Books page when Google gives a Play link for a book not on Play', async () => {
+    server.use(
+      http.get(`${VOLUMES_URL}/:id`, () =>
+        HttpResponse.json({
+          ...makeVolume('abc', {
+            infoLink: 'https://play.google.com/store/books/details?id=abc&source=gbs_api',
+            previewLink: 'http://books.google.it/books?id=abc&hl=&source=gbs_api',
+          }),
+          saleInfo: { saleability: 'NOT_FOR_SALE' },
+        }),
+      ),
+    );
+    renderApp('/books/abc');
+    const link = await screen.findByRole('link', { name: /view on google books/i });
+    expect(link).toHaveAttribute('href', 'https://books.google.it/books?id=abc&hl=&source=gbs_api');
+  });
+
+  it('falls back to the thumbnail when the large cover is not book-shaped', async () => {
+    server.use(
+      http.get(`${VOLUMES_URL}/:id`, () =>
+        HttpResponse.json(
+          makeVolume('abc', {
+            imageLinks: { thumbnail: 'http://x/thumb.jpg', large: 'http://x/large.png' },
+          }),
+        ),
+      ),
+    );
+    renderApp('/books/abc');
+    const image = await screen.findByAltText('Cover of Book abc');
+    expect(image).toHaveAttribute('src', 'https://x/large.png');
+    Object.defineProperty(image, 'naturalWidth', { value: 800 });
+    Object.defineProperty(image, 'naturalHeight', { value: 128 });
+    fireEvent.load(image);
+    expect(image).toHaveAttribute('src', 'https://x/thumb.jpg');
   });
 
   it('shows a not-found message for unknown ids', async () => {

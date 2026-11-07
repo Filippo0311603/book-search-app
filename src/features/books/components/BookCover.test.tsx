@@ -24,4 +24,35 @@ describe('BookCover', () => {
     fireEvent.error(image);
     expect(assigned).toEqual([]);
   });
+
+  /** jsdom does not decode images: set the natural size the browser would report, then load. */
+  function loadWithSize(image: HTMLElement, width: number, height: number) {
+    Object.defineProperty(image, 'naturalWidth', { value: width, configurable: true });
+    Object.defineProperty(image, 'naturalHeight', { value: height, configurable: true });
+    fireEvent.load(image);
+  }
+
+  it('replaces a strip-shaped image with the fallback, then with the placeholder', () => {
+    render(<BookCover src="https://x/large.png" fallbackSrc="https://x/thumb.jpg" title="Dune" />);
+    const image = screen.getByRole('img', { name: 'Cover of Dune' });
+
+    loadWithSize(image, 800, 128);
+    expect(image).toHaveAttribute('src', 'https://x/thumb.jpg');
+
+    loadWithSize(image, 128, 20);
+    expect(image).toHaveAttribute('src', PLACEHOLDER_COVER_URL);
+  });
+
+  it('keeps a book-shaped image and uses the fallback on error', () => {
+    render(<BookCover src="https://x/large.jpg" fallbackSrc="https://x/thumb.jpg" title="Dune" />);
+    const image = screen.getByRole('img', { name: 'Cover of Dune' });
+
+    loadWithSize(image, 800, 1200);
+    expect(image).toHaveAttribute('src', 'https://x/large.jpg');
+
+    fireEvent.error(image);
+    expect(image).toHaveAttribute('src', 'https://x/thumb.jpg');
+    fireEvent.error(image);
+    expect(image).toHaveAttribute('src', PLACEHOLDER_COVER_URL);
+  });
 });

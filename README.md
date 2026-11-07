@@ -91,6 +91,7 @@ The free browser sandbox does not run Vite: it uses CodeSandbox's legacy bundler
 - "Back to results" relies on router state, which exists only in the tab where the book was opened. A detail page opened in a new tab links back to the plain search page.
 - There is no cool-down after a 429: the user can press Retry immediately.
 - Treating HTTP 400 on deep pages as "end of results" is defensive; Google does not document it.
+- Google's /volumes/{id} can return a Play Store infoLink (a 404) for books that are NOT_FOR_SALE, and cover crops (e.g. 800x128 strips) for large sizes; the app then uses the volume's Google Books previewLink as the "View on Google Books" link, and falls back to the thumbnail and then the placeholder when a cover is not book-shaped (width/height outside 0.4-1.5).
 
 ## Project layout
 

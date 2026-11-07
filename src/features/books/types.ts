@@ -10,6 +10,8 @@ export interface VolumeInfo {
   categories?: string[];
   language?: string;
   infoLink?: string;
+  /** Google Books page of the volume (books.google.*), also for volumes not sold on Play. */
+  previewLink?: string;
   imageLinks?: {
     smallThumbnail?: string;
     thumbnail?: string;
@@ -23,6 +25,10 @@ export interface VolumeInfo {
 export interface Volume {
   id: string;
   volumeInfo?: VolumeInfo;
+  saleInfo?: {
+    /** FOR_SALE, FREE, NOT_FOR_SALE or FOR_PREORDER. */
+    saleability?: string;
+  };
 }
 
 export interface VolumesResponse {

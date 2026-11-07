@@ -58,6 +58,28 @@ describe('mapVolume', () => {
   });
 });
 
+describe('infoLink', () => {
+  const PLAY = 'https://play.google.com/store/books/details?id=a&source=gbs_api';
+  const PREVIEW = 'http://books.google.it/books?id=a&hl=&source=gbs_api';
+  const link = (saleability: string | undefined, info: object) =>
+    mapVolume({ ...makeVolume('a', info), saleInfo: { saleability } }).infoLink;
+
+  it('replaces a Play Store link of a volume not sold on Play with its Google Books page', () => {
+    expect(link('NOT_FOR_SALE', { infoLink: PLAY, previewLink: PREVIEW })).toBe(
+      'https://books.google.it/books?id=a&hl=&source=gbs_api',
+    );
+  });
+
+  it('keeps infoLink in every other case', () => {
+    expect(link('FOR_SALE', { infoLink: PLAY, previewLink: PREVIEW })).toBe(PLAY);
+    expect(link('FREE', { infoLink: PLAY, previewLink: PREVIEW })).toBe(PLAY);
+    expect(link(undefined, { infoLink: PLAY, previewLink: PREVIEW })).toBe(PLAY);
+    expect(link('NOT_FOR_SALE', { infoLink: PLAY, previewLink: undefined })).toBe(PLAY);
+    const books = 'http://books.google.it/books?id=a&dq=x&source=gbs_api';
+    expect(link('NOT_FOR_SALE', { infoLink: books, previewLink: PREVIEW })).toBe(books);
+  });
+});
+
 describe('mapVolumesResponse', () => {
   it('handles responses without items', () => {
     expect(mapVolumesResponse({ totalItems: 0 })).toEqual({ books: [], totalItems: 0 });

@@ -51,14 +51,20 @@ export function BookDetailPage() {
     <article>
       <title>{`${book.title} - BookSearch`}</title>
       <BookBackLink search={from} cameFromResults={cameFromResults} />
-      {/* Blurred, darkened copy of the cover as backdrop (see _detail.scss). */}
+      {/* Blurred, darkened copy of the cover as backdrop (see _detail.scss). The thumbnail is
+          enough once blurred, and it is the most reliable size Google serves. */}
       <div
         className="book-hero"
-        style={{ '--cover': `url(${JSON.stringify(book.coverLarge)})` } as CSSProperties}
+        style={{ '--cover': `url(${JSON.stringify(book.thumbnail)})` } as CSSProperties}
       >
         <div className="row g-4 align-items-center">
           <div className="col-12 col-md-4 col-lg-3 text-center text-md-start">
-            <BookCover src={book.coverLarge} title={book.title} large />
+            <BookCover
+              src={book.coverLarge}
+              fallbackSrc={book.thumbnail}
+              title={book.title}
+              large
+            />
           </div>
           <div className="col-12 col-md-8 col-lg-9">
             <h1 className="book-hero-title mb-2">{book.title}</h1>
