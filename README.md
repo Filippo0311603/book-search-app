@@ -83,7 +83,7 @@ The free browser sandbox does not run Vite: it uses CodeSandbox's legacy bundler
 
 ## Tests
 
-`npm test` runs 106 Vitest tests in 11 files with React Testing Library and MSW (`onUnhandledRequest: error`), rendering the app in `StrictMode` with no real network. They cover one request per character with every obsolete one aborted (the handler observes `request.signal`), out-of-order responses, the cache, the retry policy, pagination math and bounds, the mappers, the detail page, theme and keyboard shortcut, accessibility details and the entrance animation. jsdom's own `AbortSignal` is rejected by Node's `fetch`, so tests use a small custom environment (`src/test/jsdom-node-abort.ts`) that adds Node's native one. CI (`.github/workflows/ci.yml`) runs lint, `format:check`, tests, the build and a check that `main.css` is up to date.
+`npm test` runs 115 Vitest tests in 12 files with React Testing Library and MSW (`onUnhandledRequest: error`), rendering the app in `StrictMode` with no real network. They cover one request per character with every obsolete one aborted (the handler observes `request.signal`), out-of-order responses, the cache, the retry policy, pagination math and bounds, the mappers, the detail page, theme and keyboard shortcut, accessibility details and the entrance animation. jsdom's own `AbortSignal` is rejected by Node's `fetch`, so tests use a small custom environment (`src/test/jsdom-node-abort.ts`) that adds Node's native one. CI (`.github/workflows/ci.yml`) runs lint, `format:check`, tests, the build and a check that `main.css` is up to date.
 
 ## Known limitations
 
