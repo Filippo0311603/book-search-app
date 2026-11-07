@@ -4,7 +4,7 @@
 
 Search the [Google Books API](https://developers.google.com/books/docs/v1/reference/volumes/list) with live results, pagination and a detail page. Built with Vite, React 19, TypeScript, Redux Toolkit (RTK Query) and Bootstrap 5.3 themed with Sass.
 
-**Live:** [GitHub Pages](https://filippo0311603.github.io/book-search-app/) · **CodeSandbox:** <!-- SANDBOX_URL --> _link added at submission_
+**Live:** [GitHub Pages](https://filippo0311603.github.io/book-search-app/) · **CodeSandbox:** [codesandbox.io/p/devbox/quizzical-mcclintock-7x5gnd](https://codesandbox.io/p/devbox/quizzical-mcclintock-7x5gnd)
 
 ## Quick start
 
@@ -75,11 +75,11 @@ sequenceDiagram
 - **No debounce**, as the brief asks. Aborts, the cache and the 429 handling absorb the cost; a 300 ms debounce would cut quota use at the price of a delay.
 - **Precompiled, committed CSS.** The free CodeSandbox bundler cannot run Sass. `main.css` is generated from the SCSS and CI fails if the committed copy drifts.
 - **Descriptions.** Plain text in lists (needed for the line clamp), DOMPurify-sanitized HTML on the detail page.
-- **The API key is public.** In a client-side app, anything in the bundle can be read. The deployed key is restricted to the Books API and, with an HTTP referrer restriction, to the app's domains. A backend proxy holding the key would be the real fix.
+- **The API key is public.** In a client-side app, anything in the bundle can be read. The restrictions on the key are described under CodeSandbox. A backend proxy holding the key would be the real fix.
 
 ## CodeSandbox
 
-The free browser sandbox does not run Vite: it uses CodeSandbox's legacy bundler with the `create-react-app` preset, pinned in `sandbox.config.json`. That bundler cannot compile Sass, so `src/styles/main.css` is precompiled and committed (`npm run build:css`; `dev` and `build` regenerate it, so edit the SCSS, never the CSS). It cannot evaluate `import.meta.env` either, so the key is read as `process.env.VITE_GOOGLE_BOOKS_API_KEY`, which `vite.config.ts` also defines. Icons are inline SVGs (`components/icons.tsx`, from Bootstrap Icons) because the icon font's relative URLs do not resolve there. To use a key in a fork, add a `.env` at its root.
+The free browser sandbox does not run Vite: it uses CodeSandbox's legacy bundler with the `create-react-app` preset, pinned in `sandbox.config.json`. That bundler cannot compile Sass, so `src/styles/main.css` is precompiled and committed (`npm run build:css`; `dev` and `build` regenerate it, so edit the SCSS, never the CSS). It cannot evaluate `import.meta.env` either, so the key is read as `process.env.VITE_GOOGLE_BOOKS_API_KEY`, which `vite.config.ts` also defines. Icons are inline SVGs (`components/icons.tsx`, from Bootstrap Icons) because the icon font's relative URLs do not resolve there. To use a key in a fork, add a `.env` at its root. The public sandbox contains a `.env` with a browser API key. In a client-side app the key is public by nature (it is sent in every request), so it is restricted in Google Cloud to the Books API and, by HTTP referrer, to the sandbox preview (`7x5gnd.csb.app`), the GitHub Pages domain and `localhost:5173`.
 
 ## Tests
 
