@@ -1,5 +1,5 @@
 import { Link, Outlet } from 'react-router';
-import { BookHalfIcon } from './icons';
+import { BookHalfIcon, GithubIcon } from './icons';
 import { ThemeToggle } from './ThemeToggle';
 
 export function Layout() {
@@ -16,7 +16,7 @@ export function Layout() {
       >
         Skip to main content
       </a>
-      <header>
+      <header className="site-header">
         <nav className="navbar navbar-dark bg-dark" aria-label="Main">
           <div className="container">
             <Link
@@ -36,8 +36,24 @@ export function Layout() {
       <main id="main" tabIndex={-1} className="container flex-grow-1 py-4">
         <Outlet />
       </main>
-      <footer className="border-top py-3 text-center text-body-secondary small">
-        Data provided by the Google Books API
+      <footer className="site-footer">
+        <div className="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+          <span className="text-center">
+            <span className="brand-wordmark">
+              Book<span className="brand-accent">Search</span>
+            </span>
+            <span className="d-none d-sm-inline"> &middot; </span>
+            <span className="d-block d-sm-inline">Data provided by the Google Books API</span>
+          </span>
+          <a
+            href="https://github.com/Filippo0311603/book-search-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <GithubIcon className="me-1" />
+            Source on GitHub<span className="visually-hidden"> (opens in a new tab)</span>
+          </a>
+        </div>
       </footer>
     </div>
   );

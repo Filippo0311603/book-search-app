@@ -1,119 +1,29 @@
-// Book cover (list + detail), result cards and loading skeletons.
+// Result cards and loading skeletons.
 
-// A real 3D book: the frame only keeps the layout box and sets the perspective;
-// .book-cover-book is the object that rotates (spine on the left), made of the front
-// cover (the <img>), a back cover and the cream page edges on the right.
-.book-cover-frame {
-  --depth: 12px;
-  --tilt: -16deg;
-  position: relative;
-  display: block;
-  flex: none;
-  width: 80px;
-  line-height: 0;
-  perspective: 600px;
-
-  @include media-breakpoint-up(md) {
-    width: 100px;
-    --depth: 14px;
+// The book rotates further, like pulled off the shelf; its shadow moves with it. Shared by
+// hover and keyboard focus.
+@mixin book-pulled-out {
+  .book-cover-frame {
+    --tilt: -28deg;
   }
 
-  // Detail page: as wide as the column allows, a stronger angle.
-  &--large {
-    --depth: 22px;
-    --tilt: -22deg;
-    width: 100%;
-    max-width: 240px;
-    perspective: 900px;
-
-    @include media-breakpoint-up(md) {
-      width: 100%;
-    }
-  }
-}
-
-.book-cover-book {
-  position: relative;
-  display: block;
-  transform-style: preserve-3d;
-  transform-origin: left center;
-  transform: rotateY(var(--tilt));
-  border-radius: 2px 6px 6px 2px;
-
-  // Sheen: spine crease and a light edge, a hair in front of the cover (no z-fighting).
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    transform: translateZ(1px);
-    background:
-      linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.4) 0,
-        rgba(0, 0, 0, 0.22) 3%,
-        rgba(255, 255, 255, 0.14) 6%,
-        transparent 14%
-      ),
-      linear-gradient(270deg, rgba(0, 0, 0, 0.12), transparent 8%);
-  }
-}
-
-// Back cover and spine shadow: dark, one depth behind the front.
-.book-cover-back {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: #2b2119;
-  transform: translateZ(calc(var(--depth) * -1));
-}
-
-// Page edges: a plane on the right side, rotated 90deg, with fine cream stripes.
-.book-cover-pages {
-  position: absolute;
-  top: 1px;
-  bottom: 1px;
-  left: calc(100% - var(--depth) / 2);
-  width: var(--depth);
-  transform: translateZ(calc(var(--depth) / -2)) rotateY(90deg);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(0, 0, 0, 0.18),
-      transparent 12%,
-      transparent 88%,
-      rgba(0, 0, 0, 0.22)
-    ),
-    repeating-linear-gradient(90deg, #f7f0df 0, #f7f0df 1px, #d9ccb0 1px, #d9ccb0 2px);
-}
-
-.book-cover {
-  display: block;
-  width: 100%;
-  aspect-ratio: 2 / 3;
-  object-fit: cover;
-  border-radius: inherit;
-  background-color: var(--bs-tertiary-bg);
-  // Soft layered shadow: contact shadow + two ambient ones.
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 4px 8px rgba(0, 0, 0, 0.18),
-    0 12px 24px rgba(0, 0, 0, 0.14);
-
-  // The large image is shown whole (no cropping).
-  .book-cover-frame--large & {
-    aspect-ratio: auto;
-    object-fit: contain;
+  .book-cover {
+    box-shadow:
+      6px 2px 4px rgba(0, 0, 0, 0.3),
+      14px 8px 14px rgba(0, 0, 0, 0.22),
+      24px 18px 30px rgba(0, 0, 0, 0.16);
   }
 }
 
 .book-card {
-  --bs-card-border-radius: 0.75rem;
+  --bs-card-border-radius: #{$card-border-radius};
+  box-shadow: var(--bk-shadow-sm);
   @include transition(
     border-color 0.15s ease-in-out,
     transform 0.2s ease-out,
-    box-shadow 0.2s ease-out
+    box-shadow 0.2s ease-out,
+    background-color 0.25s ease,
+    color 0.25s ease
   );
 
   &:hover,
@@ -136,34 +46,16 @@
     }
 
     // Keyboard focus pulls the book out as well.
-    &:focus-within .book-cover-frame {
-      --tilt: -28deg;
-    }
-
-    &:focus-within .book-cover {
-      box-shadow:
-        6px 2px 4px rgba(0, 0, 0, 0.3),
-        14px 8px 14px rgba(0, 0, 0, 0.22),
-        24px 18px 30px rgba(0, 0, 0, 0.16);
+    &:focus-within {
+      @include book-pulled-out;
     }
   }
 
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     &:hover {
       transform: translateY(-3px);
-      box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.12);
-    }
-
-    // The book rotates further, like pulled off the shelf; its shadow moves with it.
-    &:hover .book-cover-frame {
-      --tilt: -28deg;
-    }
-
-    &:hover .book-cover {
-      box-shadow:
-        6px 2px 4px rgba(0, 0, 0, 0.3),
-        14px 8px 14px rgba(0, 0, 0, 0.22),
-        24px 18px 30px rgba(0, 0, 0, 0.16);
+      box-shadow: var(--bk-shadow-md);
+      @include book-pulled-out;
     }
   }
 }
@@ -196,12 +88,29 @@
   }
 }
 
+// Staggered entrance, only on the first appearance of results (BookList `animate`). `--i` (position
+// in the list, set inline) delays each card a little; the
+// delay stops growing after the 10th so a long page never feels slow.
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .book-list-item--enter {
+    animation: rise-in 0.45s var(--bk-ease) backwards;
+    animation-delay: calc(min(var(--i, 0), 10) * 55ms);
+  }
+}
+
+// Loading skeletons: a static tinted bar, with a shimmer sweep unless motion is reduced.
 .skeleton-cover {
   width: 80px;
   aspect-ratio: 2 / 3;
 }
 
-// Loading skeletons: a static tinted bar, with a shimmer sweep unless motion is reduced.
 .placeholder-glow .placeholder {
   opacity: 1;
   animation: none;

@@ -5,8 +5,13 @@
 @import 'bootstrap/scss/functions';
 @import 'variables';
 @import 'bootstrap/scss/bootstrap';
+@import 'tokens';
+@import 'base';
 @import 'typography';
-@import 'components';
+@import 'layout';
+@import 'controls';
+@import 'covers';
 @import 'hero';
+@import 'shelf';
 @import 'cards';
 @import 'detail';

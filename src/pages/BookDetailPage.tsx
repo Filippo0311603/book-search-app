@@ -4,9 +4,11 @@ import { BoxArrowUpRightIcon, ExclamationTriangleIcon } from '../components/icon
 import { StatusMessage } from '../components/StatusMessage';
 import type { BookRouteState } from '../features/books/components/BookCard';
 import { BookBackLink } from '../features/books/components/BookBackLink';
+import { BookSpecs } from '../features/books/components/BookSpecs';
+import { CategoryChips } from '../features/books/components/CategoryChips';
 import { BookCover } from '../features/books/components/BookCover';
+import { getCategoryLabels } from '../features/books/categories';
 import { getErrorMessage, isNotFoundError } from '../features/books/errors';
-import { formatLanguage, formatPublishedDate } from '../features/books/format';
 import { useGetBookQuery } from '../services/googleBooksApi';
 
 export function BookDetailPage() {
@@ -43,14 +45,7 @@ export function BookDetailPage() {
     );
   }
 
-  const details: [string, string | undefined][] = [
-    ['Authors', book.authors.join(', ') || undefined],
-    ['Publisher', book.publisher],
-    ['Published', formatPublishedDate(book.publishedDate)],
-    ['Pages', book.pageCount ? String(book.pageCount) : undefined],
-    ['Categories', book.categories.join(', ') || undefined],
-    ['Language', formatLanguage(book.language)],
-  ];
+  const categoryLabels = getCategoryLabels(book.categories);
 
   return (
     <article>
@@ -67,16 +62,18 @@ export function BookDetailPage() {
           </div>
           <div className="col-12 col-md-8 col-lg-9">
             <h1 className="book-hero-title mb-2">{book.title}</h1>
-            {book.subtitle && <p className="lead">{book.subtitle}</p>}
+            {book.subtitle && <p className="book-hero-subtitle">{book.subtitle}</p>}
             {book.authors.length > 0 && (
-              <p className="book-hero-authors mb-4">by {book.authors.join(', ')}</p>
+              <p className="book-hero-authors">by {book.authors.join(', ')}</p>
             )}
+            <BookSpecs book={book} />
+            <CategoryChips labels={categoryLabels} />
             {book.infoLink && (
               <a
                 href={book.infoLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-primary btn-lg"
+                className="btn btn-primary btn-lg book-hero-cta"
               >
                 View on Google Books <BoxArrowUpRightIcon className="ms-1" />
               </a>
@@ -84,28 +81,20 @@ export function BookDetailPage() {
           </div>
         </div>
       </div>
-      <div>
-        <dl className="meta-grid">
-          {details.map(
-            ([label, value]) =>
-              value && (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ),
-          )}
-        </dl>
-        {book.descriptionHtml && (
-          <section aria-labelledby="description-title" className="mb-4">
+      {book.descriptionHtml && (
+        <div className="row">
+          <section
+            aria-labelledby="description-title"
+            className="col-12 col-md-8 offset-md-4 col-lg-9 offset-lg-3 book-description"
+          >
             <h2 id="description-title" className="h5">
               Description
             </h2>
             {/* Sanitized in the mapper (DOMPurify, formatting tags only). */}
             <div dangerouslySetInnerHTML={{ __html: book.descriptionHtml }} />
           </section>
-        )}
-      </div>
+        </div>
+      )}
     </article>
   );
 }

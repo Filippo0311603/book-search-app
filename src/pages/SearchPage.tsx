@@ -2,13 +2,13 @@ import { useRef, useState } from 'react';
 import { useNavigationType } from 'react-router';
 import { useAppDispatch } from '../app/hooks';
 import {
-  BookHalfIcon,
   EmojiFrownIcon,
   ExclamationTriangleIcon,
   HourglassSplitIcon,
   SignpostSplitIcon,
 } from '../components/icons';
 import { PageSizeSelect } from '../components/PageSizeSelect';
+import { HeroShelf } from '../components/HeroShelf';
 import { Paginator } from '../components/Paginator';
 import { SearchBar } from '../components/SearchBar';
 import { StatusMessage } from '../components/StatusMessage';
@@ -87,6 +87,17 @@ export function SearchPage() {
   // What is on screen for the current results, shared by the count line and the results block.
   const view = getShownResults();
 
+  // The staggered entrance plays only for the first results shown after the hero state. `key`
+  // identifies those results; later ones (more typing, another page) just replace them quietly.
+  const [entranceKey, setEntranceKey] = useState<string | null>(null);
+  const viewKey =
+    view && view.books.length > 0
+      ? JSON.stringify([q, view.shown.page, view.shown.pageSize])
+      : null;
+  if (!q && entranceKey !== null) setEntranceKey(null);
+  else if (q && entranceKey === null && viewKey !== null) setEntranceKey(viewKey);
+  const animateEntrance = viewKey !== null && viewKey === entranceKey;
+
   return (
     <>
       <title>{q ? `${q} - BookSearch` : 'BookSearch'}</title>
@@ -94,9 +105,7 @@ export function SearchPage() {
       <div className={q ? undefined : 'hero'}>
         {!q && (
           <div className="text-center mb-4">
-            <span className="hero-mark mb-3" aria-hidden="true">
-              <BookHalfIcon />
-            </span>
+            <HeroShelf />
             <h2 className="hero-title">Find your next great read</h2>
             <p className="hero-lead lead text-body-secondary mb-0">
               Start typing a title, an author or an ISBN: results appear as you type.
@@ -221,7 +230,7 @@ export function SearchPage() {
           className={search.isFetching ? 'results-fade' : undefined}
           aria-busy={search.isFetching}
         >
-          <BookList books={books} />
+          <BookList books={books} animate={animateEntrance} />
         </div>
         <div className="mt-4">
           <Paginator currentPage={page} totalPages={totalPages} onPageChange={setPage} />

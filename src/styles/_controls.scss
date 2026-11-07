@@ -1,0 +1,131 @@
+// Controls: search box, page-size select, paginator, buttons, suggestion chips, status messages.
+// Colours come from Bootstrap's CSS variables (--bs-*) so they follow the light/dark colour mode.
+
+// One focus ring around the whole search control (icon + input + buttons), not just the text field.
+.search-group {
+  border-radius: $input-border-radius-lg;
+  box-shadow: var(--bk-shadow-sm);
+
+  &:focus-within {
+    box-shadow: $input-focus-box-shadow;
+
+    > .form-control,
+    > .input-group-text,
+    > .btn {
+      border-color: $input-focus-border-color;
+    }
+  }
+
+  > .form-control:focus {
+    box-shadow: none;
+  }
+}
+
+// The "/" shortcut hint, laid over the right end of the search box (a sibling of the input group).
+.search-hint {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  z-index: 6; // above the focused input (z-index 5 in an input group)
+  transform: translateY(-50%);
+  pointer-events: none;
+  background: var(--bs-body-bg);
+  color: var(--bs-secondary-color);
+  border: 1px solid var(--bs-border-color);
+  box-shadow: none;
+  font-size: 0.8rem;
+}
+
+// The native clear button would duplicate our own one (WebKit/Blink).
+input[type='search']::-webkit-search-cancel-button {
+  display: none;
+}
+
+// Paginator: separate rounded buttons that wrap on narrow screens (first/last hide below sm).
+.pagination {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.2rem;
+
+  @include media-breakpoint-up(sm) {
+    gap: 0.35rem;
+  }
+
+  .page-item .page-link {
+    // Compact on phones so 9 items (ends, window, ellipsis) still fit on one row at 360px.
+    min-width: 2rem;
+    padding-inline: 0.4rem;
+    margin-left: 0;
+    border-radius: var(--bs-pagination-border-radius);
+    text-align: center;
+    box-shadow: var(--bk-shadow-sm);
+
+    @include media-breakpoint-up(sm) {
+      min-width: 2.5rem;
+      padding-inline: $pagination-padding-x;
+    }
+  }
+
+  .page-item.active .page-link {
+    font-weight: 600;
+  }
+
+  .page-item.disabled .page-link {
+    box-shadow: none;
+    opacity: 0.6;
+  }
+}
+
+// Soft call-to-action buttons: a little lift, never for users who prefer less motion.
+.btn-primary {
+  box-shadow: var(--bk-shadow-sm);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--bk-shadow-md);
+  }
+}
+
+// Bootstrap keeps the secondary button colours fixed; lighten them on the dark background.
+[data-bs-theme='dark'] .btn-outline-secondary {
+  --bs-btn-color: #b4bac6;
+  --bs-btn-border-color: #5b6372;
+  --bs-btn-hover-color: #14171f;
+  --bs-btn-hover-bg: #b4bac6;
+  --bs-btn-hover-border-color: #b4bac6;
+  --bs-btn-active-color: #14171f;
+  --bs-btn-active-bg: #b4bac6;
+  --bs-btn-active-border-color: #b4bac6;
+  --bs-btn-disabled-color: #b4bac6;
+  --bs-btn-disabled-border-color: #5b6372;
+}
+
+// Pills on paper: the suggested searches. (The detail page has its own glass variant.)
+.chip {
+  --bs-btn-color: var(--bs-body-color);
+  --bs-btn-bg: var(--bs-tertiary-bg);
+  --bs-btn-border-color: var(--bs-border-color);
+  --bs-btn-hover-color: var(--bs-body-color);
+  --bs-btn-hover-bg: var(--bs-secondary-bg);
+  --bs-btn-hover-border-color: var(--bs-primary);
+  --bs-btn-active-color: var(--bs-body-color);
+  --bs-btn-active-bg: var(--bs-secondary-bg);
+  --bs-btn-active-border-color: var(--bs-primary);
+  padding-inline: 0.9rem;
+  box-shadow: var(--bk-shadow-sm);
+}
+
+// Empty, no-results and error states: icon in a soft round badge.
+.status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  font-size: 2rem;
+  color: var(--bs-secondary-color);
+  background: var(--bs-secondary-bg);
+}

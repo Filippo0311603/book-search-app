@@ -1,5 +1,6 @@
 // Theme overrides. Must be imported BEFORE bootstrap's own variables (they are all !default).
 $brand: #ff5039;
+$brand-light: #ff7a66; // accent on the dark navbar: AA even over pale content behind the glass
 
 $primary: $brand;
 $secondary: #4b5563;
@@ -39,3 +40,32 @@ $body-tertiary-bg-dark: #161d31;
 $border-color-dark: #2c3552;
 $link-color-dark: #ff8f7e; // light enough for AA on the dark background
 $link-hover-color-dark: #ffb4a8;
+
+// One radius scale for the whole product: controls .5, cards .75, panels (hero, banner) 1.25.
+$border-radius-sm: 0.375rem;
+$border-radius-lg: 0.75rem;
+$border-radius-xl: 1.25rem;
+$card-border-radius: $border-radius-lg;
+$card-border-color: var(--bs-border-color);
+
+// Form controls sit on "paper" (tertiary), not on the page background; colours also fade on theme switch.
+$input-bg: var(--bs-tertiary-bg);
+$form-select-bg: var(--bs-tertiary-bg);
+$input-border-color: var(--bs-border-color);
+$input-transition:
+  border-color 0.15s ease-in-out,
+  box-shadow 0.15s ease-in-out,
+  background-color 0.25s ease,
+  color 0.25s ease;
+
+// Paginator: separate rounded buttons (see _controls.scss), same surfaces as the other controls.
+$pagination-color: var(--bs-body-color);
+$pagination-bg: var(--bs-tertiary-bg);
+$pagination-border-color: var(--bs-border-color);
+$pagination-hover-bg: var(--bs-secondary-bg);
+$pagination-hover-color: var(--bs-body-color);
+$pagination-hover-border-color: var(--bs-primary);
+$pagination-focus-bg: var(--bs-secondary-bg);
+$pagination-focus-color: var(--bs-body-color);
+$pagination-disabled-bg: transparent;
+$pagination-padding-x: 0.85rem;

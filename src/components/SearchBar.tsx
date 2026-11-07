@@ -24,7 +24,7 @@ export function SearchBar({ value, onChange, onClear, inputRef }: SearchBarProps
       <label htmlFor="book-search" className="form-label visually-hidden">
         Search books
       </label>
-      {/* `search-group` draws one focus ring around icon, input and buttons (see _components.scss). */}
+      {/* `search-group` draws one focus ring around icon, input and buttons (see _controls.scss). */}
       <div className="position-relative">
         <div className="input-group input-group-lg search-group">
           <span className="input-group-text" aria-hidden="true">

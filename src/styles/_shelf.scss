@@ -1,0 +1,82 @@
+// Decorative floating bookshelf of the home page (see HeroShelf.tsx). The books reuse the 3D parts
+// from _covers.scss (.book-cover-book, -back, -pages); only the front face is drawn here.
+// Sizes are in `em`, so the whole shelf scales with this font-size.
+.hero-shelf {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.9em;
+  width: fit-content;
+  margin: 0 auto 1.5rem;
+  padding: 0 1em 0.7em;
+  font-size: 12px;
+  perspective: 700px;
+  pointer-events: none;
+
+  @include media-breakpoint-up(md) {
+    font-size: 15px;
+  }
+
+  // The plank the books stand on.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 0.7em;
+    border-radius: 0.2em;
+    background: linear-gradient(#cfae7e, #a98456);
+    box-shadow: 0 0.6em 1.2em rgba(0, 0, 0, 0.22);
+
+    [data-bs-theme='dark'] & {
+      background: linear-gradient(#5a4630, #3b2d1e);
+    }
+  }
+}
+
+.shelf-book {
+  --depth: 1.1em;
+  --tilt: -24deg;
+  width: var(--w);
+  height: var(--h);
+
+  // Light mobile version: three books only, still.
+  &:nth-child(n + 4) {
+    display: none;
+
+    @include media-breakpoint-up(md) {
+      display: block;
+    }
+  }
+
+  @include media-breakpoint-up(md) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: shelf-float calc(5s + var(--i) * 0.8s) ease-in-out calc(var(--i) * -1.3s) infinite
+        alternate;
+    }
+  }
+}
+
+.shelf-book-front {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  // Title lines and a base band on top of the colour gradient.
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)) 22% 16% / 56% 0.2em
+      no-repeat,
+    linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)) 22% 24% / 38% 0.2em
+      no-repeat,
+    linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)) 0 84% / 100% 12% no-repeat,
+    linear-gradient(135deg, var(--c1), var(--c2));
+}
+
+@keyframes shelf-float {
+  from {
+    transform: rotateY(calc(var(--tilt) + 4deg)) translateY(0);
+  }
+
+  to {
+    transform: rotateY(calc(var(--tilt) - 6deg)) translateY(-0.6em);
+  }
+}

@@ -193,3 +193,40 @@ describe('skip link', () => {
     expect(screen.getByTestId('location')).toHaveTextContent(/^\/books\//);
   });
 });
+
+describe('results entrance animation', () => {
+  const animated = () => document.querySelectorAll('.book-list-item--enter').length;
+
+  it('plays for the first results after the hero, not for typing or paging', async () => {
+    server.use(
+      http.get(VOLUMES_URL, ({ request }) => {
+        const url = new URL(request.url);
+        // Different books for every request, as when the keys change while typing.
+        const offset =
+          Number(url.searchParams.get('startIndex') ?? 0) +
+          (url.searchParams.get('q') ?? '').length * 100;
+        return HttpResponse.json(makeResponse(5, 50, offset));
+      }),
+    );
+    renderApp('/');
+    const box = screen.getByRole('searchbox');
+
+    await userEvent.type(box, 'a');
+    expect(await screen.findByRole('heading', { name: 'Book id101' })).toBeInTheDocument();
+    expect(animated()).toBe(5);
+
+    await userEvent.type(box, 'b');
+    expect(await screen.findByRole('heading', { name: 'Book id201' })).toBeInTheDocument();
+    expect(animated()).toBe(0);
+
+    await userEvent.click(screen.getByRole('button', { name: /next/i }));
+    expect(await screen.findByRole('heading', { name: 'Book id211' })).toBeInTheDocument();
+    expect(animated()).toBe(0);
+
+    // Back to the hero state: the next first results animate again.
+    await userEvent.clear(box);
+    await userEvent.type(box, 'c');
+    expect(await screen.findByRole('heading', { name: 'Book id101' })).toBeInTheDocument();
+    expect(animated()).toBe(5);
+  });
+});

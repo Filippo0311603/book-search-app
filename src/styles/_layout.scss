@@ -1,0 +1,48 @@
+// Sticky glass navbar and the footer.
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: $zindex-sticky;
+
+  .navbar {
+    border-bottom: 3px solid $brand;
+  }
+
+  // On the dark navbar the accent needs a lighter coral than the brand colour to stay AA even
+  // when the translucent bar sits over pale content.
+  .brand-accent {
+    color: $brand-light;
+  }
+}
+
+// Glass: the page shows through the navbar, blurred. Browsers without backdrop-filter keep the
+// solid bar (opacity 1), so the text never loses contrast.
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .site-header .navbar {
+    --bs-bg-opacity: 0.88;
+    -webkit-backdrop-filter: blur(14px) saturate(1.6);
+    backdrop-filter: blur(14px) saturate(1.6);
+  }
+}
+
+.site-footer {
+  margin-top: 2rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--bs-border-color);
+  font-size: $font-size-sm;
+  color: var(--bs-secondary-color);
+
+  .brand-wordmark {
+    font-size: 1.1rem;
+    color: var(--bs-body-color);
+  }
+
+  // The brand colour is too light for text on paper: use the AA link colour.
+  .brand-accent {
+    color: var(--bs-link-color);
+  }
+
+  a {
+    color: var(--bs-link-color);
+  }
+}
